@@ -1,4 +1,11 @@
+# Bỏ qua tệp cơ sở dữ liệu Scrapy và các tệp cấu hình
+# Đường dẫn tương đối so với thư mục gốc (C:\Users\vuong\webscrapping)
+
 # Bỏ qua tệp cơ sở dữ liệu Scrapy
-C:\Users\vuong\webscrapping\stock_company_scraper/stock_company_scraper/stock_events.db
-C:\Users\vuong\webscrapping\stock_company_scraper\news.json
-C:\Users\vuong\webscrapping\stock_company_scraper\stock_company_scraper\firebase-admin-key.json
+stock_company_scraper/stock_company_scraper/stock_events.db
+
+# Bỏ qua tệp JSON
+stock_company_scraper/news.json
+
+# Bỏ qua khóa bí mật (Rất quan trọng)
+stock_company_scraper/stock_company_scraper/firebase-admin-key.json
