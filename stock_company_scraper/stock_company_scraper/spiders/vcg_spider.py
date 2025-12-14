@@ -47,7 +47,7 @@ class EventSpider(scrapy.Spider):
             e_item['mcp'] = 'VCG'
             e_item['web_source'] = self.allowed_domains[0]
             e_item['summary'] = title
-            e_item['details_raw'] = title +'\n' + article_url_relative
+            e_item['details_raw'] = str(title) +'\n' + str(article_url_relative)
             e_item['date'] = convert_date_to_iso8601(date_string)               
             yield e_item
 

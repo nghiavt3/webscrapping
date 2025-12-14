@@ -22,7 +22,7 @@ class EventSpider(scrapy.Spider):
             detail_url = item.css('h3.dk-item-title a::attr(href)').get()
             description = item.css('div.dk-item-desc::text').get()
             download_url = item.css('a.btndl-it::attr(href)').get()
-            e_item['details_raw'] = description + '\n' + detail_url + '\n' + download_url
+            e_item['details_raw'] = str(description) + '\n' + str(detail_url) + '\n' + str(download_url)
                          
             yield e_item
 

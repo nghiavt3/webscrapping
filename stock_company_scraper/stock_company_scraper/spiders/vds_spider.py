@@ -31,7 +31,7 @@ class EventSpider(scrapy.Spider):
             e_item['mcp'] = 'VDS'
             e_item['web_source'] = 'vdsc.com.vn'
             e_item['summary'] = cleaned_title
-            e_item['details_raw'] =cleaned_title +'\n' + detail_url
+            e_item['details_raw'] =str(cleaned_title) +'\n' + str(detail_url)
             e_item['date'] = convert_date_dash_to_iso8601(cleaned_date)               
             yield e_item
 

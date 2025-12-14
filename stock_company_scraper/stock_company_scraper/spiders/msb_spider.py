@@ -62,7 +62,7 @@ class EventSpider(scrapy.Spider):
             e_item['mcp'] = 'MSB'
             e_item['web_source'] = self.allowed_domains[0]
             e_item['summary'] = tieu_de
-            e_item['details_raw'] = tieu_de +'\n' + url_tai_ve_absolute
+            e_item['details_raw'] = str(tieu_de) +'\n' + str(url_tai_ve_absolute)
             e_item['date'] = convert_date_to_iso8601(ngay_cong_bo)               
             yield e_item
 

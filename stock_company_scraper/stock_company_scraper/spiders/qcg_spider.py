@@ -30,7 +30,7 @@ class EventSpider(scrapy.Spider):
             e_item['mcp'] = 'QCG'
             e_item['web_source'] = self.allowed_domains[0]
             e_item['summary'] = cleaned_title
-            e_item['details_raw'] = cleaned_title +'\n' + doc_url_raw+ '\n' + download_url_raw
+            e_item['details_raw'] = str(cleaned_title) +'\n' + str(doc_url_raw)+ '\n' + str(download_url_raw)
             e_item['date'] = convert_date_to_iso8601(cleaned_date)               
             yield e_item
 

@@ -55,7 +55,7 @@ class EventSpider(scrapy.Spider):
             e_item['date'] = convert_date_to_iso8601(cleaned_date)
             e_item['summary'] = cleaned_title
             
-            e_item['details_raw'] = cleaned_title + '\n' + document_url_relative
+            e_item['details_raw'] = str(cleaned_title) + '\n' + str(document_url_relative)
                          
             yield e_item
 

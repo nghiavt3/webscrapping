@@ -54,7 +54,7 @@ class EventSpider(scrapy.Spider):
             e_item['mcp'] = 'VTP'
             e_item['web_source'] = self.allowed_domains[0]
             e_item['summary'] = cleaned_title
-            e_item['details_raw'] = cleaned_title +'\n' + cleaned_description+ '\n' + article_url_relative
+            e_item['details_raw'] = str(cleaned_title) +'\n' + str(cleaned_description) + '\n' + str(article_url_relative)
             e_item['date'] = convert_date_to_iso(cleaned_date)               
             yield e_item
 

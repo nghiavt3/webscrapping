@@ -42,7 +42,7 @@ class EventSpider(scrapy.Spider):
             e_item['mcp'] = self.mcpcty
             e_item['web_source'] = self.allowed_domains[0]
             e_item['summary'] = title
-            e_item['details_raw'] = title +'\n' + absolute_url
+            e_item['details_raw'] = str(title) +'\n' + str(absolute_url)
             e_item['date'] = convert_date_to_sqlite_format(date)
             yield e_item
 

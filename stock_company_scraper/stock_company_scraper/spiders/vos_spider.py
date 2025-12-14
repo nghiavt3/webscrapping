@@ -48,7 +48,7 @@ class EventSpider(scrapy.Spider):
                 item['summary'] = title.strip()
                 item['date'] = date_machine 
                 # Bước 1: Trích xuất danh sách chỉ chứa các URL
-                item['details_raw'] = title.strip()+'\n'+ url
+                item['details_raw'] = str(title.strip()) +'\n'+ str(url)
                 #item['details_clean'] = download_url
                 #item['download_url'] = download_url
                 yield item
