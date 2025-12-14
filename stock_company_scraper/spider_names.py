@@ -62,7 +62,36 @@ SPIDER_DPG = 'event_dpg'
 SPIDER_IDC = 'event_idc'# tìm thấy api và trả về json VIP
 SPIDER_SMC = 'event_smc'
 
-SPIDER_KSB = 'event_ksb'
+SPIDER_KSB = 'event_ksb' # chờ wright tải đầy đủ trang
+SPIDER_L14 = 'event_l14'
+SPIDER_CMS = 'event_cms'
+SPIDER_NO1 = 'event_no1'
+SPIDER_THG = 'event_thg'
+SPIDER_NBB = 'event_nbb'
+SPIDER_CCC = 'event_ccc'
+SPIDER_NLG = 'event_nlg'
+
+SPIDER_DXG = 'event_dxg'
+SPIDER_NTL = 'event_ntl'
+SPIDER_DIG = 'event_dig'
+SPIDER_NVL = 'event_nvl'
+SPIDER_DTD = 'event_dtd'
+SPIDER_HDC = 'event_hdc'
+SPIDER_KDH = 'event_kdh'
+SPIDER_DC4 = 'event_dc4'
+SPIDER_NHA = 'event_nha'
+SPIDER_HDG = 'event_hdg'
+
+SPIDER_TCH = 'event_tch'
+SPIDER_DXS = 'event_dxs'
+SPIDER_CRC = 'event_crc'
+SPIDER_GVR = 'event_gvr' #dung wright
+SPIDER_SIP = 'event_sip'
+SPIDER_PHR = 'event_phr'
+SPIDER_TIP = 'event_tip' # tìm dc api và lấy json về
+SPIDER_D2D = 'event_d2d' # tìm dc api và lấy json về
+SPIDER_NTC = 'event_ntc'
+SPIDER_BCM = 'event_bcm'
 # Thêm các tên Spider khác vào đây khi bạn mở rộng dự án
 ALL_SPIDERS = [ SPIDER_TLG, SPIDER_SEAPRIMEXCO, SPIDER_VOS,SPIDER_KBC,SPIDER_VDS,SPIDER_CII,
                SPIDER_PDR,SPIDER_CEO,SPIDER_QCG,SPIDER_EVG,SPIDER_VTP,SPIDER_VCG,SPIDER_LCG,
@@ -70,4 +99,8 @@ ALL_SPIDERS = [ SPIDER_TLG, SPIDER_SEAPRIMEXCO, SPIDER_VOS,SPIDER_KBC,SPIDER_VDS
                SPIDER_HBC,SPIDER_DGT,SPIDER_MZG,SPIDER_VGI,SPIDER_DRI,SPIDER_HNM,SPIDER_VGT,
                SPIDER_VEA,SPIDER_KLB,SPIDER_MCH,SPIDER_OIL,SPIDER_FOX,SPIDER_FCN,SPIDER_DRH,
                SPIDER_PAC,SPIDER_CTD,SPIDER_SZC,SPIDER_HHV,SPIDER_VGC,SPIDER_PLC,SPIDER_BCC,
-               SPIDER_DHA,SPIDER_CTI,SPIDER_IJC,SPIDER_DPG,SPIDER_IDC,SPIDER_SMC,SPIDER_KSB]
+               SPIDER_DHA,SPIDER_CTI,SPIDER_IJC,SPIDER_DPG,SPIDER_IDC,SPIDER_SMC,SPIDER_KSB,
+               SPIDER_L14,SPIDER_CMS,SPIDER_NO1,SPIDER_THG,SPIDER_NBB,SPIDER_CCC,SPIDER_NLG,
+               SPIDER_DXG,SPIDER_NTL,SPIDER_DIG,SPIDER_NVL,SPIDER_DTD,SPIDER_HDC,SPIDER_KDH,
+               SPIDER_DC4,SPIDER_NHA,SPIDER_HDG,SPIDER_TCH,SPIDER_DXS,SPIDER_CRC,SPIDER_GVR,
+               SPIDER_SIP,SPIDER_PHR,SPIDER_TIP,SPIDER_D2D,SPIDER_NTC,SPIDER_BCM]

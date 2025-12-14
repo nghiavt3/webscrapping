@@ -98,7 +98,7 @@ class EventSpider(scrapy.Spider):
                     # Chuyển đổi ngày tháng DD/MM/YYYY sang ISO 8601 YYYY-MM-DD
                     e_item['date'] = convert_date_to_iso8601(date_part) 
                     e_item['summary'] = title_part
-                    e_item['details_raw'] = title_part + '\n' + download_url_absolute
+                    e_item['details_raw'] = str(title_part) + '\n' + str(download_url_absolute)
                                         
                     yield e_item
                     

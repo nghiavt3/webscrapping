@@ -30,7 +30,7 @@ class EventSpider(scrapy.Spider):
             e_item['mcp'] = self.mcpcty
             e_item['web_source'] = self.allowed_domains[0]
             e_item['summary'] = content
-            e_item['details_raw'] = content +'\n' + file_url_relative
+            e_item['details_raw'] = str(content) +'\n' + str(file_url_relative)
             e_item['date'] = convert_date_to_iso8601(date)               
             yield e_item
 

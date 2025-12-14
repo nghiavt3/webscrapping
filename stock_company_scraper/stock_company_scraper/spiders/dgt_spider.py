@@ -43,7 +43,7 @@ class EventSpider(scrapy.Spider):
             e_item['mcp'] = 'DGT'
             e_item['web_source'] = self.allowed_domains[0]
             e_item['summary'] = title_clean
-            e_item['details_raw'] = title_clean +'\n' + url
+            e_item['details_raw'] = str(title_clean) +'\n' + str(url)
             e_item['date'] = convert_date_to_iso8601(full_date)               
             yield e_item
 

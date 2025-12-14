@@ -96,6 +96,6 @@ class EventSpider(scrapy.Spider):
         # Làm sạch dữ liệu và gán vào item
         e_item['summary'] = title_raw.strip() if title_raw else None
         summary_cleaned = summary_raw.strip() if summary_raw else None
-        e_item['details_raw'] = (e_item['summary'] or '') + '\n' + (summary_cleaned or '') + '\n' + (url_raw or '')
+        e_item['details_raw'] = str(e_item['summary'] or '') + '\n' + str(summary_cleaned or '') + '\n' + str(url_raw or '')
         
         return e_item

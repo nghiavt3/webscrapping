@@ -31,7 +31,7 @@ class EventSpider(scrapy.Spider):
             e_item['mcp'] = 'AAH'
             e_item['web_source'] = self.allowed_domains[0]
             e_item['summary'] = title
-            e_item['details_raw'] = title +'\n'+ excerpt +'\n' + url
+            e_item['details_raw'] = str(title) +'\n'+ str(excerpt) +'\n' + str(url)
             e_item['date'] = convert_date_to_iso8601(date)               
             yield e_item
 

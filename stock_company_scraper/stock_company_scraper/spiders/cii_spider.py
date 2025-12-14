@@ -31,7 +31,7 @@ class EventSpider(scrapy.Spider):
             e_item['mcp'] = 'CII'
             e_item['web_source'] = 'cii.com.vn'
             e_item['summary'] = cleaned_title
-            e_item['details_raw'] = cleaned_title +'\n' + cleaned_summary + '\n' + detail_url
+            e_item['details_raw'] = str(cleaned_title) +'\n' + str(cleaned_summary) + '\n' + str(detail_url)
             e_item['date'] = convert_viet_date_to_iso8601(cleaned_date,current_year)               
             yield e_item
 

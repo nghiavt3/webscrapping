@@ -44,7 +44,7 @@ class EventSpider(scrapy.Spider):
                 item['web_source'] = 'seaprimexco.com'
                 item['summary'] = title.strip()
                 item['date'] = formatted_date if formatted_date else None
-                item['details_raw'] = title.strip() + '\n' + download_url
+                item['details_raw'] = str(title.strip()) + '\n' + str(download_url)
                 #item['details_clean'] = download_url
                 #item['download_url'] = download_url
                 yield item

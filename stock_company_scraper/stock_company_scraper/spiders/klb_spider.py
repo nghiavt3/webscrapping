@@ -24,7 +24,7 @@ class EventSpider(scrapy.Spider):
             e_item['mcp'] = self.mcpcty
             e_item['web_source'] = self.allowed_domains[0]
             e_item['summary'] = title
-            e_item['details_raw'] = title +'\n' + link
+            e_item['details_raw'] = str(title) +'\n' + str(link)
             e_item['date'] = convert_date_to_iso8601(time)               
             yield e_item
 
@@ -41,7 +41,7 @@ def convert_date_to_iso8601(vietnam_date_str):
         return None
 
     # Định dạng đầu vào: Ngày/Tháng/Năm ('%d/%m/%Y')
-    input_format = '%d/%m/%Y'
+    input_format = '%d/%m/%Y - %H:%M'
     
     # Định dạng đầu ra: Năm-Tháng-Ngày ('%Y-%m-%d') - chuẩn ISO 8601 cho ngày
     output_format = '%Y-%m-%d'
