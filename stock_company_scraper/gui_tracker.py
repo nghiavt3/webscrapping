@@ -150,7 +150,7 @@ def display_new_events_7days(tree_widget, detail_box):
     """
     # 1. Định nghĩa khoảng thời gian 7 ngày TRƯỚC
     today = date.today()+ timedelta(days=1)
-    seven_days_ago = today - timedelta(days=7)
+    seven_days_ago = today - timedelta(days=5)
 
     # 2. Định dạng ngày tháng cho truy vấn SQL
     # CHÚ Ý: SQLITE hoạt động tốt nhất khi so sánh ngày ở định dạng 'YYYY-MM-DD'
@@ -182,7 +182,7 @@ def display_new_events_7days(tree_widget, detail_box):
             query = f"""
                 SELECT id, mcp, date, summary, scraped_at, web_source , details_clean 
                 FROM {table_name} 
-                WHERE date BETWEEN ? AND ? 
+                WHERE date BETWEEN ? AND ?
                 ORDER BY date DESC
             """
             
@@ -408,7 +408,7 @@ run_button.pack(side='left', padx=10)
 
 # 1. Nút Xem Sự kiện Mới
 ttk.Button(btn_frame, 
-           text="🚨 SỰ KIỆN MỚI (7 ngày)", 
+           text="🚨 SỰ KIỆN MỚI (5 ngày)", 
            command=lambda: display_new_events_7days(tree, detail_box)).pack(side='left', padx=5)
 
 # 2. Các nút Xem Lịch sử (Tên các bảng trong SQLite)
