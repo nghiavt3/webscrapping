@@ -1,11 +1,7 @@
-# Tên các Spider (phải khớp với thuộc tính 'name' trong các file Spider tương ứng)
-
-#SPIDER_VIETSTOCK = 'event_table_scraper'
 SPIDER_SEAPRIMEXCO = 'event_cat'
 SPIDER_VOS = 'event_vos'
 SPIDER_TLG = 'event_tlg'
 SPIDER_KBC = 'event_kbc'
-SPIDER_VDS = 'event_vds'
 SPIDER_CII = 'event_cii'
 SPIDER_PDR = 'event_pdr'
 SPIDER_CEO = 'event_ceo'
@@ -18,22 +14,18 @@ SPIDER_LCG = 'event_lcg'
 SPIDER_TPB = 'event_tpb' #fix
 SPIDER_TIG = 'event_tig'
 SPIDER_MSB = 'event_msb' #fix
-
 SPIDER_ABB = 'event_abb'
 SPIDER_AAH = 'event_aah'
 SPIDER_C4G = 'event_c4g'
 SPIDER_MSR = 'event_msr'
-SPIDER_G36 = 'event_g36'
+SPIDER_G36 = 'event_g36'#fix
 SPIDER_PVX = 'event_pvx'
 SPIDER_ACV = 'event_acv'
-SPIDER_SBS = 'event_sbs' #fix
 SPIDER_HBC = 'event_hbc'
 SPIDER_DGT = 'event_dgt'
-SPIDER_BVB = 'event_bvb' #chưa khởi tạo file
-SPIDER_AAS = 'event_aas' #fix
+SPIDER_BVB = 'event_bvb' #chưa khởi tạo file fix
 SPIDER_MZG = 'event_mzg'
-
-SPIDER_DDV = 'event_ddv'
+SPIDER_DDV = 'event_ddv' #fix
 SPIDER_VGI = 'event_vgi'
 SPIDER_DRI = 'event_dri'
 SPIDER_HNM = 'event_hnm'
@@ -44,7 +36,6 @@ SPIDER_POM = 'event_pom'
 SPIDER_MCH = 'event_mch'
 SPIDER_OIL = 'event_oil'
 SPIDER_FOX = 'event_fox'
-
 SPIDER_FCN = 'event_fcn'
 SPIDER_DRH = 'event_drh'
 SPIDER_PAC = 'event_pac'
@@ -55,13 +46,12 @@ SPIDER_VGC = 'event_vgc'
 SPIDER_PLC = 'event_plc'
 SPIDER_BCC = 'event_bcc'
 SPIDER_DHA = 'event_dha' #cần cập nhập lại url mỗi năm 
-SPIDER_PC1 = 'event_pc1' # server chặn bot
+SPIDER_PC1 = 'event_pc1' #fix server chặn bot fix
 SPIDER_CTI = 'event_cti'# tìm thấy api và trả về json
 SPIDER_IJC = 'event_ijc'
 SPIDER_DPG = 'event_dpg'
 SPIDER_IDC = 'event_idc'# tìm thấy api và trả về json VIP
 SPIDER_SMC = 'event_smc'
-
 SPIDER_KSB = 'event_ksb' # chờ wright tải đầy đủ trang
 SPIDER_L14 = 'event_l14'
 SPIDER_CMS = 'event_cms'
@@ -70,7 +60,6 @@ SPIDER_THG = 'event_thg'
 SPIDER_NBB = 'event_nbb'
 SPIDER_CCC = 'event_ccc'
 SPIDER_NLG = 'event_nlg'
-
 SPIDER_DXG = 'event_dxg'
 SPIDER_NTL = 'event_ntl'
 SPIDER_DIG = 'event_dig'
@@ -81,7 +70,6 @@ SPIDER_KDH = 'event_kdh'
 SPIDER_DC4 = 'event_dc4'
 SPIDER_NHA = 'event_nha' #server cty bị down> loại khỏi danh mục
 SPIDER_HDG = 'event_hdg'
-
 SPIDER_TCH = 'event_tch'
 SPIDER_DXS = 'event_dxs'
 SPIDER_CRC = 'event_crc'
@@ -92,7 +80,6 @@ SPIDER_TIP = 'event_tip' # tìm dc api và lấy json về
 SPIDER_D2D = 'event_d2d' # tìm dc api và lấy json về
 SPIDER_NTC = 'event_ntc'
 SPIDER_BCM = 'event_bcm'
-
 SPIDER_TTA = 'event_tta'
 SPIDER_SCS = 'event_scs'
 SPIDER_SIV = 'event_siv'
@@ -100,7 +87,7 @@ SPIDER_FT1 = 'event_ft1'# tìm dc api và lấy json về
 SPIDER_HTG = 'event_htg'
 SPIDER_HDB = 'event_hdb'#dung wright
 SPIDER_MPC = 'event_mpc'# tìm dc api và lấy json về
-SPIDER_CTG = 'event_ctg'
+SPIDER_CTG = 'event_ctg' #fix
 SPIDER_SGB = 'event_sgb'
 SPIDER_VSI = 'event_vsi'
 SPIDER_PHP = 'event_php'
@@ -113,9 +100,8 @@ SPIDER_LHG = 'event_lhg'# tìm dc api và lấy json về
 SPIDER_TCO = 'event_tco'# tìm dc api và lấy json về
 SPIDER_IDJ = 'event_idj'
 SPIDER_TDC = 'event_tdc'
-SPIDER_CSC = 'evemt_csc' # date none
+SPIDER_CSC = 'evemt_csc' # fix date none
 SPIDER_KHG = 'event_khg'
-
 SPIDER_DGC = 'event_dgc'
 SPIDER_YEG = 'event_yeg' #csselector cụ thể trong class --học hỏi
 SPIDER_SHI = 'event_shi'#dung wright
@@ -131,7 +117,7 @@ SPIDER_SAB = 'event_sab'
 SPIDER_PET = 'event_pet'# tìm dc api và lấy json về
 SPIDER_TNA = 'event_tna'# tìm dc api và lấy json về
 SPIDER_ASM = 'event_asm'
-SPIDER_PIV = 'event_piv' #date none #fixx ngừng hok build
+SPIDER_PIV = 'event_piv' # fix date none #fixx ngừng hok build
 SPIDER_SAV = 'event_sav'# tìm dc api và lấy json về
 SPIDER_NAF = 'event_naf'
 SPIDER_HAX = 'event_hax' #đường link href sẽ thay đổi theo từng năm . mỗi năm update lai ref
@@ -142,7 +128,6 @@ SPIDER_HTL = 'event_htl'# tìm dc api và lấy json về
 SPIDER_PSD = 'event_psd'
 SPIDER_ADS = 'event_ads'# tìm dc api và lấy json về
 SPIDER_MML = 'event_mml'
-
 SPIDER_HPG = 'event_hpg'
 SPIDER_NKG = 'event_nkg'
 SPIDER_HSG = 'event_hsg'
@@ -156,9 +141,30 @@ SPIDER_HSV = 'event_hsv'
 SPIDER_HMC = 'event_hmc'# tìm dc api và lấy json về
 SPIDER_TNI = 'event_tni'
 
-
+#chia thành nhóm spiders khác để chạy
+SPIDER_CTS = 'event_cts'
+SPIDER_SSI = 'event_ssi'
+SPIDER_VCI = 'event_vci'
+SPIDER_HCM = 'event_hcm'
+SPIDER_VND = 'event_vnd'
+SPIDER_VIX = 'event_vix'
+SPIDER_TCI = 'event_tci'
+SPIDER_MBS = 'event_mbs'#dùng wright
+SPIDER_SBS = 'event_sbs'
+SPIDER_APS = 'event_aps'
+SPIDER_VFS = 'event_vfs'
+SPIDER_FTS = 'event_fts'#dùng wright
+SPIDER_VDS = 'event_vds'
+SPIDER_APG = 'event_apg'
+SPIDER_ARG = 'event_agr'#dùng wright special
+SPIDER_DSC = 'event_dsc'#dùng wright
+SPIDER_BSI = 'event_bsi'
+SPIDER_VIG = 'event_vig' #date
+SPIDER_BVS = 'event_bvs'
+SPIDER_PSI = 'event_psi'
+SPIDER_AAS = 'event_aas'#dùng wright
 # Thêm các tên Spider khác vào đây khi bạn mở rộng dự án
-ALL_SPIDERS = [ SPIDER_TLG, SPIDER_SEAPRIMEXCO, SPIDER_VOS,SPIDER_KBC,SPIDER_VDS,SPIDER_CII,
+ALL_SPIDERS = [ SPIDER_TLG, SPIDER_SEAPRIMEXCO, SPIDER_VOS,SPIDER_KBC,SPIDER_CII,
                SPIDER_PDR,SPIDER_CEO,SPIDER_QCG,SPIDER_EVG,SPIDER_VTP,SPIDER_VCG,SPIDER_LCG,
                SPIDER_TIG,SPIDER_ABB,SPIDER_AAH,SPIDER_C4G,SPIDER_MSR,SPIDER_PVX,SPIDER_ACV,
                SPIDER_HBC,SPIDER_DGT,SPIDER_MZG,SPIDER_VGI,SPIDER_DRI,SPIDER_HNM,SPIDER_VGT,
@@ -176,4 +182,9 @@ ALL_SPIDERS = [ SPIDER_TLG, SPIDER_SEAPRIMEXCO, SPIDER_VOS,SPIDER_KBC,SPIDER_VDS
                SPIDER_PNJ,SPIDER_SAB,SPIDER_PET,SPIDER_TNA,SPIDER_ASM,SPIDER_SAV,SPIDER_NAF,
                SPIDER_HAX,SPIDER_HNF,SPIDER_TFC,SPIDER_MCM,SPIDER_HTL,SPIDER_PSD,SPIDER_ADS,
                SPIDER_MML,SPIDER_HPG,SPIDER_NKG,SPIDER_HSG,SPIDER_VGS,SPIDER_TLH,SPIDER_TVN,
-               SPIDER_TIS,SPIDER_GDA,SPIDER_VCA,SPIDER_HSV,SPIDER_HMC,SPIDER_TNI,SPIDER_POM]
+               SPIDER_TIS,SPIDER_GDA,SPIDER_VCA,SPIDER_HSV,SPIDER_HMC,SPIDER_TNI,SPIDER_POM,
+               
+               
+               SPIDER_CTS,SPIDER_SSI,SPIDER_VCI,SPIDER_HCM,SPIDER_VND,SPIDER_VIX,SPIDER_TCI,
+               SPIDER_MBS,SPIDER_SBS,SPIDER_APS,SPIDER_VFS,SPIDER_FTS,SPIDER_VDS,SPIDER_APG,
+               SPIDER_ARG,SPIDER_DSC,SPIDER_BSI,SPIDER_VIG,SPIDER_BVS,SPIDER_PSI,SPIDER_AAS  ]

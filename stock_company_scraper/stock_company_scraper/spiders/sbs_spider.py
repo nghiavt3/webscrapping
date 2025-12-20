@@ -9,27 +9,37 @@ class EventSpider(scrapy.Spider):
     # Thay thế bằng URL thực tế chứa bảng dữ liệu
     start_urls = ['https://sbsc.com.vn/Annoucement.aspx'] 
 
+    # def start_requests(self):
+    #     yield scrapy.Request(
+    #     url=self.start_urls[0],
+    #     callback=self.parse,
+    #     # Thêm meta để kích hoạt Playwright
+    #     meta={'playwright': True}
+    # )
+
+
     def parse(self, response):
-        # 1. Lấy danh sách tất cả các thông báo (records)
-        news_items = response.css('div.main-content ul.list > li')
-        
+        news_items = response.css('div[id*="cbSearchHeadNews"] table table tr')
+
         for item in news_items:
-            # 2. Trích xuất Tiêu đề, URL và Ngày đăng cho mỗi mục
-            title = item.css('h3.title a::text').get()
-            url = item.css('h3.title a::attr(href)').get()
+            # 2. Trích xuất tiêu đề (nằm trong thẻ a có class newsTitle)
+            title = item.css('a.newsTitle::text').get()
             
-            # Trích xuất Ngày đăng và làm sạch chuỗi
-            date_text = item.css('p.date::text').getall()
-            # Lấy phần tử cuối cùng và loại bỏ khoảng trắng dư thừa
-            # Ví dụ: [' Đăng ngày:', '03/12/2025 '] -> '03/12/2025 '
-            date = date_text[-1].strip() if date_text else None
+            # 3. Trích xuất link chi tiết
+            detail_url = item.css('a.newsTitle::attr(href)').get()
+
+            # 4. Trích xuất ngày đăng (nằm trong span class timestamp)
+            raw_date = item.css('span.timestamp::text').get()
 
             e_item = EventItem()
             e_item['mcp'] = 'SBS'
             e_item['web_source'] = self.allowed_domains[0]
             e_item['summary'] = title
-            e_item['details_raw'] = str(title) +'\n' + str(url)
-            e_item['date'] = convert_date_to_iso8601(date)               
+            e_item['details_raw'] = str(title) +'\n' + str(response.urljoin(detail_url) if detail_url else "")
+            if raw_date:
+                e_item['date'] = convert_date_to_iso8601(raw_date.strip())
+            else:
+                e_item['date'] = "None"
             yield e_item
 
 from datetime import datetime
