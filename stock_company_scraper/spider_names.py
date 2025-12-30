@@ -1,4 +1,4 @@
-SPIDER_SEAPRIMEXCO = 'event_cat'
+SPIDER_CAT = 'event_cat'
 SPIDER_VOS = 'event_vos'
 SPIDER_TLG = 'event_tlg'
 SPIDER_KBC = 'event_kbc'
@@ -11,10 +11,7 @@ SPIDER_VTP = 'event_vtp'
 SPIDER_VIC = 'event_vic'  #fix
 SPIDER_VCG = 'event_vcg'
 SPIDER_LCG = 'event_lcg'
-SPIDER_TPB = 'event_tpb' #fix
 SPIDER_TIG = 'event_tig'
-SPIDER_MSB = 'event_msb' #fix
-SPIDER_ABB = 'event_abb'
 SPIDER_AAH = 'event_aah'
 SPIDER_C4G = 'event_c4g'
 SPIDER_MSR = 'event_msr'
@@ -85,9 +82,7 @@ SPIDER_SCS = 'event_scs'
 SPIDER_SIV = 'event_siv'
 SPIDER_FT1 = 'event_ft1'# tìm dc api và lấy json về
 SPIDER_HTG = 'event_htg'
-SPIDER_HDB = 'event_hdb'#dung wright
 SPIDER_MPC = 'event_mpc'# tìm dc api và lấy json về
-SPIDER_CTG = 'event_ctg' #fix
 SPIDER_SGB = 'event_sgb'
 SPIDER_VSI = 'event_vsi'
 SPIDER_PHP = 'event_php'
@@ -168,10 +163,35 @@ SPIDER_DSE = 'event_dse'
 SPIDER_IVS = 'event_ivs'
 SPIDER_ORS = 'event_ors'
 SPIDER_VCK = 'event_vck'
+SPIDER_TCX = 'event_tcx'
+SPIDER_VPX = 'event_vpx'
+
+SPIDER_FIR = 'event_fir'#dùng wright
+SPIDER_VHM = 'event_vhm'#dùng wright
+SPIDER_NDN = 'event_ndn'
+SPIDER_VRE = 'event_vre'
+
+SPIDER_STB = 'event_stb'#dùng wright
+SPIDER_MBB = 'event_mbb' # fix server down
+SPIDER_CTG = 'event_ctg' 
+SPIDER_TPB = 'event_tpb'#dùng wright
+SPIDER_VPB = 'event_vpb'#dùng wright
+SPIDER_ACB = 'event_acb'#dùng wright
+SPIDER_BID = 'event_bid'#dùng wright
+SPIDER_VCB = 'event_vcb'#fixx
+SPIDER_HDB = 'event_hdb'#dung wright
+SPIDER_TCB = 'event_tcb'#dung wright
+SPIDER_BVH = 'event_bvh'#dung wright
+SPIDER_SHB = 'event_shb'
+SPIDER_LPB = 'event_lpb'
+SPIDER_MSB = 'event_msb' #fix vấn đề cốt lõi không nằm ở code Scrapy của bạn mà nằm ở cơ chế bảo mật (Anti-Bot) của website MSB.
+SPIDER_VIB = 'event_vib' # draw 2 url đặc biệt
+SPIDER_ABB = 'event_abb'
+SPIDER_SSB = 'event_ssb' # draw 2 url đặc biệt
 # Thêm các tên Spider khác vào đây khi bạn mở rộng dự án
-ALL_SPIDERS = [ SPIDER_TLG, SPIDER_SEAPRIMEXCO, SPIDER_VOS,SPIDER_KBC,SPIDER_CII,
+ALL_SPIDERS = [ SPIDER_TLG, SPIDER_CAT, SPIDER_VOS,SPIDER_KBC,SPIDER_CII,
                SPIDER_PDR,SPIDER_CEO,SPIDER_QCG,SPIDER_EVG,SPIDER_VTP,SPIDER_VCG,SPIDER_LCG,
-               SPIDER_TIG,SPIDER_ABB,SPIDER_AAH,SPIDER_C4G,SPIDER_MSR,SPIDER_PVX,SPIDER_ACV,
+               SPIDER_TIG,SPIDER_AAH,SPIDER_C4G,SPIDER_MSR,SPIDER_PVX,SPIDER_ACV,
                SPIDER_HBC,SPIDER_DGT,SPIDER_MZG,SPIDER_VGI,SPIDER_DRI,SPIDER_HNM,SPIDER_VGT,
                SPIDER_VEA,SPIDER_KLB,SPIDER_MCH,SPIDER_OIL,SPIDER_FOX,SPIDER_FCN,SPIDER_DRH,
                SPIDER_PAC,SPIDER_CTD,SPIDER_SZC,SPIDER_HHV,SPIDER_VGC,SPIDER_PLC,SPIDER_BCC,
@@ -180,7 +200,7 @@ ALL_SPIDERS = [ SPIDER_TLG, SPIDER_SEAPRIMEXCO, SPIDER_VOS,SPIDER_KBC,SPIDER_CII
                SPIDER_DXG,SPIDER_NTL,SPIDER_DIG,SPIDER_NVL,SPIDER_DTD,SPIDER_HDC,SPIDER_KDH,
                SPIDER_DC4,SPIDER_HDG,SPIDER_TCH,SPIDER_DXS,SPIDER_CRC,SPIDER_GVR,
                SPIDER_SIP,SPIDER_PHR,SPIDER_TIP,SPIDER_D2D,SPIDER_NTC,SPIDER_BCM,SPIDER_TTA,
-               SPIDER_SCS,SPIDER_SIV,SPIDER_FT1,SPIDER_HTG,SPIDER_HDB,SPIDER_MPC,SPIDER_SGB,
+               SPIDER_SCS,SPIDER_SIV,SPIDER_FT1,SPIDER_HTG,SPIDER_MPC,SPIDER_SGB,
                SPIDER_VSI,SPIDER_PHP,SPIDER_DVC,SPIDER_TV2,SPIDER_X26,SPIDER_BQP,SPIDER_EME,
                SPIDER_LHG,SPIDER_TCO,SPIDER_IDJ,SPIDER_TDC,SPIDER_KHG,SPIDER_DGC,SPIDER_YEG,
                SPIDER_SHI,SPIDER_HID,SPIDER_AAT,SPIDER_MWG,SPIDER_DGW,SPIDER_MSN,SPIDER_FPT,
@@ -193,4 +213,10 @@ ALL_SPIDERS = [ SPIDER_TLG, SPIDER_SEAPRIMEXCO, SPIDER_VOS,SPIDER_KBC,SPIDER_CII
                SPIDER_CTS,SPIDER_SSI,SPIDER_VCI,SPIDER_HCM,SPIDER_VND,SPIDER_VIX,SPIDER_TCI,
                SPIDER_MBS,SPIDER_SBS,SPIDER_APS,SPIDER_VFS,SPIDER_FTS,SPIDER_VDS,SPIDER_APG,
                SPIDER_ARG,SPIDER_DSC,SPIDER_BSI,SPIDER_VIG,SPIDER_BVS,SPIDER_PSI,SPIDER_AAS,
-               SPIDER_BMS,SPIDER_DSE,SPIDER_IVS,SPIDER_ORS,SPIDER_VCK]
+               SPIDER_BMS,SPIDER_DSE,SPIDER_IVS,SPIDER_ORS,SPIDER_VCK,SPIDER_TCX,SPIDER_VPX,
+               
+               SPIDER_FIR,SPIDER_VHM,SPIDER_NDN,SPIDER_VRE,
+               
+               SPIDER_STB,SPIDER_CTG,SPIDER_TPB,SPIDER_HDB,SPIDER_VPB,SPIDER_ACB,SPIDER_BID,
+               SPIDER_TCB,SPIDER_BVH,SPIDER_SHB,SPIDER_LPB,SPIDER_VIB,SPIDER_ABB,SPIDER_SSB
+               ]

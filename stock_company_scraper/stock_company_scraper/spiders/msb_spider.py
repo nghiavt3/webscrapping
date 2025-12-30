@@ -2,6 +2,7 @@ import scrapy
 from stock_company_scraper.items import EventItem
 from datetime import datetime
 import re
+from scrapy_playwright.page import PageMethod
 class EventSpider(scrapy.Spider):
     name = 'event_msb'
     # Thay thế bằng domain thực tế
@@ -9,28 +10,23 @@ class EventSpider(scrapy.Spider):
     # Thay thế bằng URL thực tế chứa bảng dữ liệu
     start_urls = ['https://www.msb.com.vn/vi/nha-dau-tu/cong-bo-thong-tin.html'] 
 
-    custom_settings = {
-        'CONCURRENT_REQUESTS': 1,
-        'CONCURRENT_REQUESTS_PER_DOMAIN': 1,
-    }
+    # custom_settings = {
+    #     'CONCURRENT_REQUESTS': 1,
+    #     'CONCURRENT_REQUESTS_PER_DOMAIN': 1,
+    # }
 
-    async def start(self):
+    async def start(self): # Dùng start thay cho start_requests
         yield scrapy.Request(
-        url=self.start_urls[0],
-        callback=self.parse,
-        # Thêm meta để kích hoạt Playwright
-       meta={
-                'playwright': True,
-                'playwright_context_kwargs': {
-                    # Thiết lập tùy chọn để ẩn dấu vết Playwright (tùy thuộc vào phiên bản Playwright/Scrapy-Playwright)
-                    'ignore_https_errors': True,
-                    'viewport': {'width': 1280, 'height': 720}, # Thiết lập Viewport giống trình duyệt thực
-                },
-                'playwright_page_kwargs': {
-                    'wait_until': 'networkidle' # Đợi cho đến khi không còn yêu cầu mạng nào nữa (tải xong AJAX)
-                }
-            }
-    )
+            url="https://www.msb.com.vn/vi/nha-dau-tu/cong-bo-thong-tin.html",
+            meta={
+                "playwright": True,
+                "playwright_page_methods": [
+                    PageMethod("wait_for_load_state", "networkidle"), # Đợi mạng rảnh mới cào
+                    PageMethod("wait_for_timeout", 2000),             # Đợi thêm 2 giây cho chắc
+                ],
+            },
+            callback=self.parse
+        )
 
     def parse(self, response):
         # 1. Lấy danh sách tất cả các thông báo (records)

@@ -18,6 +18,7 @@ ADDONS = {}
 # Crawl responsibly by identifying yourself (and your website) on the user-agent
 #USER_AGENT = "stock_company_scraper (+http://www.yourdomain.com)"
 USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36'
+#USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
 # Bạn có thể tìm User-Agent mới nhất bằng cách gõ "my user agent" trên Google
 # Obey robots.txt rules
 ROBOTSTXT_OBEY = False
@@ -53,12 +54,18 @@ PLAYWRIGHT_CLOSING_TIMEOUT = 10
 #    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
 #    "Accept-Language": "en",
 #}
+# DEFAULT_REQUEST_HEADERS = {
+#     # Thêm Referer để giả vờ bạn đến từ một trang khác
+#     'Referer': 'https://www.google.com/', 
+#     # Chấp nhận các kiểu mã hóa phổ biến
+#     'Accept-Encoding': 'gzip, deflate, br',
+#     'Accept-Language': 'en-US,en;q=0.9,vi;q=0.8',
+# }
+# Thêm các Header mặc định
 DEFAULT_REQUEST_HEADERS = {
-    # Thêm Referer để giả vờ bạn đến từ một trang khác
-    'Referer': 'https://www.google.com/', 
-    # Chấp nhận các kiểu mã hóa phổ biến
-    'Accept-Encoding': 'gzip, deflate, br',
-    'Accept-Language': 'en-US,en;q=0.9,vi;q=0.8',
+   'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,webp,image/apng,*/*;q=0.8',
+   'Accept-Language': 'vi-VN,vi;q=0.9,en-US;q=0.8,en;q=0.7',
+   'Referer': 'https://www.google.com/',
 }
 # Enable or disable spider middlewares
 # See https://docs.scrapy.org/en/latest/topics/spider-middleware.html
