@@ -1,68 +1,83 @@
 import scrapy
+import sqlite3
 from stock_company_scraper.items import EventItem
 from datetime import datetime
-import re
+
 class EventSpider(scrapy.Spider):
     name = 'event_hid'
     mcpcty = 'HID'
-    # Thay thế bằng domain thực tế
     allowed_domains = ['halcom.vn'] 
-    # Thay thế bằng URL thực tế chứa bảng dữ liệu
     start_urls = ['https://halcom.vn/category/quan-he-co-dong/cong-bo-thong-tin/'] 
 
-    def parse(self, response):
-        # Container chứa tất cả các bài viết/thông báo
-        posts_container = response.css('div.elementor-posts-container')
-        
-        # 1. Lặp qua tất cả các bài viết (Mỗi thẻ <article> là một thông báo)
-        for post in posts_container.css('article.elementor-post'):
-            
-            # Trích xuất Tiêu đề
-            title_element = post.css('h3.elementor-post__title a::text').get()
-            title = title_element.strip() if title_element else None
-            
-            # Trích xuất URL
-            url = post.css('h3.elementor-post__title a::attr(href)').get()
-            
-            # Trích xuất Tóm tắt (Excerpt)
-            summary_element = post.css('div.elementor-post__excerpt p::text').get()
-            summary = summary_element.strip() if summary_element else None
+    def __init__(self, *args, **kwargs):
+        super(EventSpider, self).__init__(*args, **kwargs)
+        self.db_path = 'stock_events.db'
 
+    def parse(self, response):
+        # 1. Khởi tạo SQLite
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        table_name = f"{self.name}"
+        cursor.execute(f'''
+            CREATE TABLE IF NOT EXISTS {table_name} (
+                id TEXT PRIMARY KEY, mcp TEXT, date TEXT, summary TEXT, 
+                scraped_at TEXT, web_source TEXT, details_clean TEXT
+            )
+        ''')
+
+        # 2. Container chính của Elementor Posts
+        posts = response.css('article.elementor-post')
+        
+        for post in posts:
+            # Trích xuất dữ liệu
+            title = post.css('h3.elementor-post__title a::text').get()
+            url = post.css('h3.elementor-post__title a::attr(href)').get()
+            # Trích xuất ngày từ thẻ meta của Elementor (thường là span.elementor-post-date)
+            date_raw = post.css('.elementor-post-date::text').get() or post.css('.elementor-post__meta-data span:first-child::text').get()
+
+            if not title:
+                continue
+
+            cleaned_title = title.strip()
+            # Halcom thường dùng định dạng d/m/Y hoặc H:M d/m/Y
+            iso_date = convert_date_to_iso8601(date_raw.strip()) if date_raw else "NODATE"
+
+            # -------------------------------------------------------
+            # 3. KIỂM TRA ĐIỂM DỪNG (INCREMENTAL LOGIC)
+            # -------------------------------------------------------
+            event_id = f"{cleaned_title}_{iso_date}".replace(' ', '_').strip()[:150]
+            
+            cursor.execute(f"SELECT id FROM {table_name} WHERE id = ?", (event_id,))
+            if cursor.fetchone():
+                self.logger.info(f"===> GẶP TIN CŨ: [{cleaned_title}]. DỪNG QUÉT.")
+                break 
+
+            # 4. Yield Item
             e_item = EventItem()
             e_item['mcp'] = self.mcpcty
             e_item['web_source'] = self.allowed_domains[0]
-            e_item['summary'] = title
-            e_item['details_raw'] = str(title) +'\n' + str(url)
-            e_item['date'] = 'None'              
+            e_item['summary'] = cleaned_title
+            if iso_date == 'NODATE':
+                e_item['date'] = None
+            else :
+                e_item['date'] = iso_date
+            e_item['details_raw'] = f"{cleaned_title}\nLink: {url}"
+            e_item['scraped_at'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            
             yield e_item
 
-from datetime import datetime
+        conn.close()
 
-def convert_date_to_iso8601(vietnam_date_str):
-    """
-    Chuyển đổi chuỗi ngày tháng từ định dạng 'DD/MM/YYYY' sang 'YYYY-MM-DD' (ISO 8601).
-    
-    :param vietnam_date_str: Chuỗi ngày tháng đầu vào, ví dụ: '20/09/2025'
-    :return: Chuỗi ngày tháng ISO 8601, ví dụ: '2025-09-20', hoặc None nếu có lỗi.
-    """
-    if not vietnam_date_str:
+def convert_date_to_iso8601(date_str):
+    if not date_str:
         return None
-
-    # Định dạng đầu vào: Ngày/Tháng/Năm ('%d/%m/%Y')
-    input_format = '%H:%M %d/%m/%Y'
+    # Xử lý các biến thể ngày của Elementor
+    date_str = date_str.strip()
+    formats = ['%d/%m/%Y', '%H:%M %d/%m/%Y', '%d-%m-%Y']
     
-    # Định dạng đầu ra: Năm-Tháng-Ngày ('%Y-%m-%d') - chuẩn ISO 8601 cho ngày
-    output_format = '%Y-%m-%d'
-
-    try:
-        # 1. Parse chuỗi đầu vào thành đối tượng datetime
-        date_object = datetime.strptime(vietnam_date_str.strip(), input_format)
-        
-        # 2. Định dạng lại đối tượng datetime thành chuỗi ISO 8601
-        iso_date_str = date_object.strftime(output_format)
-        
-        return iso_date_str
-    
-    except ValueError as e:
-        print(f"⚠️ Lỗi chuyển đổi ngày tháng '{vietnam_date_str}' (phải là DD/MM/YYYY): {e}")
-        return None
+    for fmt in formats:
+        try:
+            return datetime.strptime(date_str, fmt).strftime('%Y-%m-%d')
+        except ValueError:
+            continue
+    return None

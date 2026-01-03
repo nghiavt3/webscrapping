@@ -1,95 +1,94 @@
 import scrapy
+import sqlite3
+import re
 from stock_company_scraper.items import EventItem
 from datetime import datetime
-import re
+
 class EventSpider(scrapy.Spider):
     name = 'event_pnj'
     mcpcty = 'PNJ'
-    # Thay thế bằng domain thực tế
     allowed_domains = ['pnj.com.vn'] 
-    # Thay thế bằng URL thực tế chứa bảng dữ liệu
     start_urls = ['https://www.pnj.com.vn/quan-he-co-dong/thong-bao/'] 
 
-    # def start_requests(self):
-    #     yield scrapy.Request(
-    #     url=self.start_urls[0],
-    #     callback=self.parse,
-    #     # Thêm meta để kích hoạt Playwright
-    #     meta={'playwright': True}
-    # )
-        
+    def __init__(self, *args, **kwargs):
+        super(EventSpider, self).__init__(*args, **kwargs)
+        self.db_path = 'stock_events.db'
+
     def parse(self, response):
-        # Lấy phần tử chứa danh sách (năm 2025)
+        # 1. Khởi tạo SQLite
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        table_name = f"{self.name}"
+        cursor.execute(f'''
+            CREATE TABLE IF NOT EXISTS {table_name} (
+                id TEXT PRIMARY KEY, mcp TEXT, date TEXT, summary TEXT, 
+                scraped_at TEXT, web_source TEXT, details_clean TEXT
+            )
+        ''')
+
+        # 2. Xử lý HTML thô từ container 'div.answer'
         container = response.css('div.answer')
-        
-        # Lấy toàn bộ nội dung HTML bên trong và tách theo thẻ <br>
-        # Chúng ta dùng .get() để lấy chuỗi HTML thô
         raw_html = container.get()
-        
-        # Tách chuỗi HTML thành từng dòng dựa trên thẻ <br> hoặc <br />
+        if not raw_html:
+            return
+
+        # Tách các dòng bằng thẻ <br>
         rows = re.split(r'<br\s*/?>', raw_html)
 
         for row in rows:
-            # Tạo một Selector tạm thời từ dòng HTML này để trích xuất
             sel = scrapy.Selector(text=row)
-            
-            # 1. Trích xuất Tiêu đề (Nằm sau dấu + và trước dấu :)
-            # Ví dụ: "+ TB thay đổi nhân sự (16/12/2025):"
             full_text = "".join(sel.css('::text').getall()).strip()
             
+            # Chỉ xử lý các dòng có dấu + (định dạng thông báo của PNJ)
             if not full_text or '+' not in full_text:
                 continue
 
-            # 2. Trích xuất Ngày tháng bằng Regex
+            # Trích xuất ngày tháng bằng Regex
             date_match = re.search(r'(\d{2}/\d{2}/\d{4})', full_text)
-            date = date_match.group(1) if date_match else ""
+            date_raw = date_match.group(1) if date_match else ""
+            iso_date = convert_date_to_iso8601(date_raw) if date_raw else "1970-01-01"
 
-            # 3. Trích xuất danh sách File (Tải về / English Version / Tên người)
+            # Trích xuất danh sách File đính kèm
             links = []
             for a in sel.css('a'):
                 links.append({
-                    'label': a.css('::text').get().strip(),
-                    'url': a.css('::attr(href)').get()
+                    'label': a.css('::text').get(default='Download').strip(),
+                    'url': response.urljoin(a.css('::attr(href)').get())
                 })
 
-            # Làm sạch tiêu đề (bỏ dấu + ở đầu và bỏ phần link ở cuối)
-            clean_title = full_text.split('):')[0].replace('+', '').strip() + ')'
+            # Làm sạch tiêu đề
+            clean_title = full_text.split('):')[0].replace('+', '').strip()
+            if '(' not in clean_title and date_raw:
+                clean_title += f" ({date_raw})"
 
+            # -------------------------------------------------------
+            # 3. KIỂM TRA ĐIỂM DỪNG (INCREMENTAL LOGIC)
+            # -------------------------------------------------------
+            event_id = f"{clean_title}_{iso_date}".replace(' ', '_').strip()[:150]
+            
+            cursor.execute(f"SELECT id FROM {table_name} WHERE id = ?", (event_id,))
+            if cursor.fetchone():
+                self.logger.info(f"===> GẶP TIN CŨ: [{clean_title}]. BỎ QUA.")
+                break 
+
+            # 4. Yield Item
             e_item = EventItem()
             e_item['mcp'] = self.mcpcty
             e_item['web_source'] = self.allowed_domains[0]
             e_item['summary'] = clean_title
-            e_item['details_raw'] = str(clean_title) +'\n' + str(links)
-            e_item['date'] = convert_date_to_iso8601(date)
+            e_item['date'] = iso_date
+            e_item['details_raw'] = f"Title: {clean_title}\nLinks: {str(links)}"
+            e_item['scraped_at'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            
             yield e_item
 
-from datetime import datetime
+        conn.close()
 
 def convert_date_to_iso8601(vietnam_date_str):
-    """
-    Chuyển đổi chuỗi ngày tháng từ định dạng 'DD/MM/YYYY' sang 'YYYY-MM-DD' (ISO 8601).
-    
-    :param vietnam_date_str: Chuỗi ngày tháng đầu vào, ví dụ: '20/09/2025'
-    :return: Chuỗi ngày tháng ISO 8601, ví dụ: '2025-09-20', hoặc None nếu có lỗi.
-    """
     if not vietnam_date_str:
         return None
-
-    # Định dạng đầu vào: Ngày/Tháng/Năm ('%d/%m/%Y')
-    input_format = '%d/%m/%Y'
-    
-    # Định dạng đầu ra: Năm-Tháng-Ngày ('%Y-%m-%d') - chuẩn ISO 8601 cho ngày
-    output_format = '%Y-%m-%d'
-
     try:
-        # 1. Parse chuỗi đầu vào thành đối tượng datetime
-        date_object = datetime.strptime(vietnam_date_str.strip(), input_format)
-        
-        # 2. Định dạng lại đối tượng datetime thành chuỗi ISO 8601
-        iso_date_str = date_object.strftime(output_format)
-        
-        return iso_date_str
-    
-    except ValueError as e:
-        print(f"⚠️ Lỗi chuyển đổi ngày tháng '{vietnam_date_str}' (phải là DD/MM/YYYY): {e}")
+        date_object = datetime.strptime(vietnam_date_str.strip(), '%d/%m/%Y')
+        return date_object.strftime('%Y-%m-%d')
+    except ValueError:
         return None

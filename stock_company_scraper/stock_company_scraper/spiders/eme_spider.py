@@ -1,102 +1,88 @@
 import scrapy
+import sqlite3
 from stock_company_scraper.items import EventItem
 from datetime import datetime
-import re
+
 class EventSpider(scrapy.Spider):
     name = 'event_eme'
-    mcpcty= 'EME'
-
-    # Thay thế bằng domain thực tế
+    mcpcty = 'EME'
     allowed_domains = ['emec.vn'] 
-    # Thay thế bằng URL thực tế chứa bảng dữ liệu
     start_urls = ['http://emec.vn/thong-bao/vn'] 
 
-    # def start_requests(self):
-    #     yield scrapy.Request(
-    #     url=self.start_urls[0],
-    #     callback=self.parse,
-    #     # Thêm meta để kích hoạt Playwright
-    #     meta={'playwright': True}
-    # )
-    
+    def __init__(self, *args, **kwargs):
+        super(EventSpider, self).__init__(*args, **kwargs)
+        self.db_path = 'stock_events.db'
+
     def parse(self, response):
-        # Chọn tất cả các khối lớn chứa danh mục (productst-e)
+        # 1. Kết nối SQLite và chuẩn bị bảng
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        table_name = f"{self.name}"
+        
+        cursor.execute(f'''
+            CREATE TABLE IF NOT EXISTS {table_name} (
+                id TEXT PRIMARY KEY, mcp TEXT, date TEXT, summary TEXT, 
+                scraped_at TEXT, web_source TEXT, details_clean TEXT
+            )
+        ''')
+
+        # 2. Chọn các khối bài viết
         post_blocks = response.css('div.bp-content')
 
         for block in post_blocks:
-            # 1. Trích xuất Tiêu đề chính của bài viết
-            # Tiêu đề nằm trong <a> trong class 'cap-bp' hoặc trong <h3> trong 'sph-content'
+            # Trích xuất Tiêu đề và Link
             title_element = block.css('.cap-bp span a')
             title = title_element.css('::attr(title)').get()
-            
-            # 2. Trích xuất Liên kết URL chi tiết bài viết
             link_detail = title_element.css('::attr(href)').get()
 
-            # 3. Trích xuất Ngày và Giờ công bố
-            # Dùng selector để lấy text của span thứ hai trong 'cap-bp'
-            # 3. Trích xuất Ngày và Giờ công bố
+            # Trích xuất Ngày giờ (Dùng getall và join để tránh lỗi node text trống)
             datetime_parts = block.css('.cap-bp span:nth-child(2)::text').getall()
+            raw_datetime = "".join(datetime_parts).strip() if datetime_parts else None
 
-            # Nối tất cả các phần lại và làm sạch
-            # Các node text sẽ là: [' ', '04/12/2025 02:07']
-            raw_datetime = "".join(datetime_parts)
+            if not title:
+                continue
 
-            # Làm sạch để loại bỏ khoảng trắng ở đầu và cuối chuỗi
-            cleaned_datetime = raw_datetime.strip() if raw_datetime else None
-            
-            # 4. Trích xuất Tên file PDF/Tài liệu đính kèm
-            # Tên file nằm trong thẻ <h4>, dùng ::text để lấy nội dung, strip() để loại bỏ các ký tự xuống dòng và khoảng trắng
-            file_name_raw = block.css('.sph-content h4::text').getall()
-            
-            # Xử lý làm sạch dữ liệu
-            cleaned_title = title.strip() if title else None
-            
-            # Xử lý tên file (có thể có nhiều file đính kèm, mỗi file là một dòng text)
-            file_names = []
-            if file_name_raw:
-                for name in file_name_raw:
-                    clean_name = name.strip()
-                    if clean_name:
-                        file_names.append(clean_name)
+            cleaned_title = title.strip()
+            iso_date = convert_date_to_iso8601(raw_datetime)
+            full_url = response.urljoin(link_detail)
 
+            # -------------------------------------------------------
+            # 3. KIỂM TRA ĐIỂM DỪNG (INCREMENTAL LOGIC)
+            # -------------------------------------------------------
+            event_id = f"{cleaned_title}_{iso_date}".replace(' ', '_').strip()[:150]
+            
+            cursor.execute(f"SELECT id FROM {table_name} WHERE id = ?", (event_id,))
+            if cursor.fetchone():
+                self.logger.info(f"===> GẶP TIN CŨ: [{cleaned_title}]. DỪNG QUÉT.")
+                break 
+
+            # 4. Yield Item
             e_item = EventItem()
-            # 2. Trích xuất dữ liệu chi tiết
             e_item['mcp'] = self.mcpcty
             e_item['web_source'] = self.allowed_domains[0]
-            e_item['date'] = convert_date_to_iso8601(cleaned_datetime)
             e_item['summary'] = cleaned_title
+            e_item['date'] = iso_date
+            e_item['details_raw'] = f"{cleaned_title}\nLink: {full_url}"
+            e_item['scraped_at'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
             
-            e_item['details_raw'] = str(cleaned_title) + '\n' + str(link_detail) 
-                        
             yield e_item
 
-from datetime import datetime
+        conn.close()
 
 def convert_date_to_iso8601(vietnam_date_str):
-    """
-    Chuyển đổi chuỗi ngày tháng từ định dạng 'DD/MM/YYYY' sang 'YYYY-MM-DD' (ISO 8601).
-    
-    :param vietnam_date_str: Chuỗi ngày tháng đầu vào, ví dụ: '20/09/2025'
-    :return: Chuỗi ngày tháng ISO 8601, ví dụ: '2025-09-20', hoặc None nếu có lỗi.
-    """
     if not vietnam_date_str:
         return None
-
-    # Định dạng đầu vào: Ngày/Tháng/Năm ('%d/%m/%Y')
-    input_format = '%d/%m/%Y %H:%M'
     
-    # Định dạng đầu ra: Năm-Tháng-Ngày ('%Y-%m-%d') - chuẩn ISO 8601 cho ngày
+    # Định dạng của EME thường là 'DD/MM/YYYY HH:MM'
+    input_format = '%d/%m/%Y %H:%M'
     output_format = '%Y-%m-%d'
 
     try:
-        # 1. Parse chuỗi đầu vào thành đối tượng datetime
         date_object = datetime.strptime(vietnam_date_str.strip(), input_format)
-        
-        # 2. Định dạng lại đối tượng datetime thành chuỗi ISO 8601
-        iso_date_str = date_object.strftime(output_format)
-        
-        return iso_date_str
-    
-    except ValueError as e:
-        print(f"⚠️ Lỗi chuyển đổi ngày tháng '{vietnam_date_str}' (phải là DD/MM/YYYY): {e}")
-        return None
+        return date_object.strftime(output_format)
+    except ValueError:
+        # Fallback trong trường hợp chỉ có ngày
+        try:
+            return datetime.strptime(vietnam_date_str.strip(), '%d/%m/%Y').strftime(output_format)
+        except ValueError:
+            return None

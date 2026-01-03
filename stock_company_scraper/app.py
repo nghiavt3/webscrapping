@@ -7,6 +7,8 @@ from flask import Flask, request, jsonify, redirect, url_for, session, render_te
 import firebase_admin
 from firebase_admin import credentials, auth
 
+import hashlib
+import time
 # --- 1. CẤU HÌNH BẢO MẬT & FIREBASE ---
 
 SECRET_KEY = 'b3e8c7f3a4d9e0b2a1c6f5e4d3c2b1a0e9f8d7c6b5a4e3d2f1e0d9c8b7a6f5e4'
@@ -57,26 +59,20 @@ def run_scrapy_spider(spider_name):
 
 # Thay thế hàm run_scrapy_spider bằng hàm mới:
 def start_external_script(script_name):
-    """
-    Hàm thực thi một file Python (.py) khác như một tiến trình nền (non-blocking).
-    """
-    print(f"--- Đang cố gắng khởi chạy file: {script_name} ---")
+    print(f"--- Đang khởi chạy file: {script_name} ---")
     try:
-        # Lệnh để chạy file Python. 
-        # Sử dụng 'python' hoặc 'python3' tùy thuộc vào môi trường của bạn.
-        command = ['python', script_name]
-        
-        # subprocess.Popen chạy lệnh trong nền (non-blocking).
-        # Đảm bảo file gui_tracker.py nằm cùng thư mục hoặc bạn chỉ định đường dẫn đầy đủ.
+        # Tạo token dựa trên thời gian (thay đổi sau mỗi phút)
+        # Chuỗi gốc: "BiMat2025" + "2025-12-30 14:30"
+        time_str = time.strftime('%Y-%m-%d %H:%M') 
+        raw_string = f"MySecretKey_{time_str}"
+        dynamic_token = hashlib.sha256(raw_string.encode()).hexdigest()
+
+        # Truyền token động vào tham số
+        command = ['python', script_name, dynamic_token]
         subprocess.Popen(command) 
-        
         return True
-    except FileNotFoundError:
-        # Lỗi thường gặp nếu lệnh 'python' không có trong PATH
-        print("Lỗi: Không tìm thấy lệnh 'python' trong hệ thống.")
-        return False
     except Exception as e:
-        print(f"Lỗi không xác định khi chạy script: {e}")
+        print(f"Lỗi: {e}")
         return False
 # --- 3. ENDPOINT XỬ LÝ ĐĂNG NHẬP/ĐĂNG KÝ ---
 

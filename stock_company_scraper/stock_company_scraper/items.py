@@ -14,4 +14,5 @@ class EventItem(scrapy.Item):
     date = scrapy.Field()
     details_clean = scrapy.Field()
     web_source = scrapy.Field()
+    scraped_at=  scrapy.Field()
     pass

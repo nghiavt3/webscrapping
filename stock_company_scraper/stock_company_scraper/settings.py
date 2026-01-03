@@ -21,6 +21,14 @@ USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTM
 #USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
 # Bạn có thể tìm User-Agent mới nhất bằng cách gõ "my user agent" trên Google
 # Obey robots.txt rules
+PLAYWRIGHT_LAUNCH_OPTIONS = {
+    "headless": True,  # Có thể đặt False để debug xem trình duyệt chạy gì
+}
+
+PLAYWRIGHT_CONTEXT_ARGS = {
+    "viewport": {"width": 1920, "height": 1080},
+    "user_agent": USER_AGENT,
+}
 ROBOTSTXT_OBEY = False
 
 # Concurrency and throttling settings
@@ -62,10 +70,23 @@ PLAYWRIGHT_CLOSING_TIMEOUT = 10
 #     'Accept-Language': 'en-US,en;q=0.9,vi;q=0.8',
 # }
 # Thêm các Header mặc định
+# DEFAULT_REQUEST_HEADERS = {
+#    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,webp,image/apng,*/*;q=0.8',
+#    'Accept-Language': 'vi-VN,vi;q=0.9,en-US;q=0.8,en;q=0.7',
+#    'Referer': 'https://www.google.com/',
+# }
 DEFAULT_REQUEST_HEADERS = {
-   'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,webp,image/apng,*/*;q=0.8',
-   'Accept-Language': 'vi-VN,vi;q=0.9,en-US;q=0.8,en;q=0.7',
-   'Referer': 'https://www.google.com/',
+    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
+    'Accept-Language': 'vi-VN,vi;q=0.9,en-US;q=0.8,en;q=0.7',
+    'Referer': 'https://www.google.com/',
+    'Cache-Control': 'max-age=0',
+    'Connection': 'keep-alive',
+    'Sec-Ch-UA': '"Not A(Brand";v="8", "Chromium";v="142", "Google Chrome";v="142"',
+    'Sec-Fetch-Dest': 'document',
+    'Sec-Fetch-Mode': 'navigate',
+    'Sec-Fetch-Site': 'none',
+    'Sec-Fetch-User': '?1',
+    'Upgrade-Insecure-Requests': '1',
 }
 # Enable or disable spider middlewares
 # See https://docs.scrapy.org/en/latest/topics/spider-middleware.html
@@ -122,3 +143,25 @@ AUTOTHROTTLE_ENABLED = True
 TWISTED_REACTOR = 'twisted.internet.asyncioreactor.AsyncioSelectorReactor'
 # Set settings whose default value is deprecated to a future-proof value
 FEED_EXPORT_ENCODING = "utf-8"
+# 1. Kích hoạt ghi log ra file
+# LOG_ENABLED = True
+# LOG_FILE = 'crawling_log.txt' # Tên file log của bạn
+# LOG_FILE_APPEND = True        # Ghi nối tiếp vào file cũ, không xóa dữ liệu cũ
+# LOG_LEVEL = 'INFO'            # Chỉ ghi những thông tin từ mức INFO trở lên
+# LOG_ENCODING = 'utf-8'        # Đảm bảo tiếng Việt không bị lỗi font
+# LOG_FORMAT = '%(asctime)s [%(name)s] %(levelname)s: %(message)s'
+# # Quan trọng: Đảm bảo log được đẩy ra file ngay lập tức
+# LOG_STDOUT = False
+# # 2. Tùy chỉnh định dạng dòng log (Thời gian - Tên Spider - Nội dung)
+# LOG_FORMAT = '%(asctime)s [%(name)s] %(levelname)s: %(message)s'
+# LOG_DATEFORMAT = '%Y-%m-%d %H:%M:%S'
+
+# Buộc Playwright đóng trình duyệt một cách nhẹ nhàng hơn
+PLAYWRIGHT_ABORT_REQUEST_TIMEOUT = 1000  # ms
+
+# Sử dụng Policy Event Loop của Windows (khắc phục lỗi SelectorEventLoop)
+import asyncio
+import sys
+
+if sys.platform == 'win32':
+    asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())

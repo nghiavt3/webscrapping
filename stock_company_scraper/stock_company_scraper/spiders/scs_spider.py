@@ -1,86 +1,81 @@
 import scrapy
+import sqlite3
 from stock_company_scraper.items import EventItem
 from datetime import datetime
-import re
+
 class EventSpider(scrapy.Spider):
     name = 'event_scs'
-    mcpcty= 'SCS'
-    # Thay thế bằng domain thực tế
+    mcpcty = 'SCS'
     allowed_domains = ['scsc.vn'] 
-    # Thay thế bằng URL thực tế chứa bảng dữ liệu
     start_urls = ['https://www.scsc.vn/vn/info_category.aspx?IDCAT=34'] 
 
+    def __init__(self, *args, **kwargs):
+        super(EventSpider, self).__init__(*args, **kwargs)
+        self.db_path = 'stock_events.db'
+
     def parse(self, response):
-        # Selector chính: Chọn tất cả các mục tin tức
+        # 1. Khởi tạo kết nối SQLite
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        table_name = f"{self.name}"
+        cursor.execute(f'''
+            CREATE TABLE IF NOT EXISTS {table_name} (
+                id TEXT PRIMARY KEY, mcp TEXT, date TEXT, summary TEXT, 
+                scraped_at TEXT, web_source TEXT, details_clean TEXT
+            )
+        ''')
+
+        # 2. Selector chính từ DevExpress layout
         announcement_items = response.css('td.dxncItem')
-        flag_date=''
+        flag_date = ''
+        
         for item_selector in announcement_items:
-            
-            
-            # 1. Trích xuất Tiêu đề
-            # Tiêu đề nằm trong thẻ <a> bên trong div.dxncItemHeader
             title_raw = item_selector.css('div.dxncItemHeader a::text').get()
-            if title_raw:
-                title = title_raw.strip()
-            
-            # 2. Trích xuất URL
-            # URL là thuộc tính 'href' của thẻ <a>
-            url = item_selector.css('div.dxncItemHeader a::attr(href)').get()
-            
-            # 3. Trích xuất Ngày Đăng
-            # Ngày nằm trong div.dxncItemDate. Lưu ý: Không phải mục nào cũng có Ngày.
+            url_raw = item_selector.css('div.dxncItemHeader a::attr(href)').get()
             date_raw = item_selector.css('div.dxncItemDate::text').get()
+            
+            if not title_raw:
+                continue
+
+            # Xử lý ngày: Dùng flag_date nếu dòng hiện tại bị trống ngày
             if date_raw:
                 pub_date = date_raw.strip()
-                flag_date= pub_date
+                flag_date = pub_date
             else:
-                # Nếu không tìm thấy ngày (như một số mục trong HTML mẫu), gán giá trị None
                 pub_date = flag_date
-                
-            # Kiểm tra URL để tạo URL tuyệt đối nếu cần (vì URL là tương đối: info_category_detail.aspx?ID=...)
-            relative_url = url
-            if relative_url:
-                # response.urljoin sẽ giúp tạo URL đầy đủ
-                url = response.urljoin(relative_url)
 
+            summary = title_raw.strip()
+            iso_date = convert_date_to_iso8601(pub_date)
+            full_url = response.urljoin(url_raw)
+
+            # -------------------------------------------------------
+            # 3. KIỂM TRA ĐIỂM DỪNG (INCREMENTAL LOGIC)
+            # -------------------------------------------------------
+            event_id = f"{summary}_{iso_date}".replace(' ', '_').strip()[:150]
+            
+            cursor.execute(f"SELECT id FROM {table_name} WHERE id = ?", (event_id,))
+            if cursor.fetchone():
+                self.logger.info(f"===> GẶP TIN CŨ: [{summary}]. DỪNG QUÉT.")
+                break 
+
+            # 4. Yield Item
             e_item = EventItem()
-            # 2. Trích xuất dữ liệu chi tiết
             e_item['mcp'] = self.mcpcty
             e_item['web_source'] = self.allowed_domains[0]
-            e_item['date'] = convert_date_to_iso8601(pub_date)
-            e_item['summary'] = title
+            e_item['summary'] = summary
+            e_item['date'] = iso_date
+            e_item['details_raw'] = f"{summary}\nLink: {full_url}"
+            e_item['scraped_at'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
             
-            e_item['details_raw'] = str(title) + '\n' + str(url) 
-                         
             yield e_item
 
-from datetime import datetime
+        conn.close()
 
 def convert_date_to_iso8601(vietnam_date_str):
-    """
-    Chuyển đổi chuỗi ngày tháng từ định dạng 'DD/MM/YYYY' sang 'YYYY-MM-DD' (ISO 8601).
-    
-    :param vietnam_date_str: Chuỗi ngày tháng đầu vào, ví dụ: '20/09/2025'
-    :return: Chuỗi ngày tháng ISO 8601, ví dụ: '2025-09-20', hoặc None nếu có lỗi.
-    """
     if not vietnam_date_str:
         return None
-
-    # Định dạng đầu vào: Ngày/Tháng/Năm ('%d/%m/%Y')
-    input_format = '%d/%m/%Y'
-    
-    # Định dạng đầu ra: Năm-Tháng-Ngày ('%Y-%m-%d') - chuẩn ISO 8601 cho ngày
-    output_format = '%Y-%m-%d'
-
     try:
-        # 1. Parse chuỗi đầu vào thành đối tượng datetime
-        date_object = datetime.strptime(vietnam_date_str.strip(), input_format)
-        
-        # 2. Định dạng lại đối tượng datetime thành chuỗi ISO 8601
-        iso_date_str = date_object.strftime(output_format)
-        
-        return iso_date_str
-    
-    except ValueError as e:
-        print(f"⚠️ Lỗi chuyển đổi ngày tháng '{vietnam_date_str}' (phải là DD/MM/YYYY): {e}")
+        date_object = datetime.strptime(vietnam_date_str.strip(), '%d/%m/%Y')
+        return date_object.strftime('%Y-%m-%d')
+    except ValueError:
         return None

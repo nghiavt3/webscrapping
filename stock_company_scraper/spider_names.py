@@ -83,7 +83,6 @@ SPIDER_SIV = 'event_siv'
 SPIDER_FT1 = 'event_ft1'# tìm dc api và lấy json về
 SPIDER_HTG = 'event_htg'
 SPIDER_MPC = 'event_mpc'# tìm dc api và lấy json về
-SPIDER_SGB = 'event_sgb'
 SPIDER_VSI = 'event_vsi'
 SPIDER_PHP = 'event_php'
 SPIDER_DVC = 'event_dvc'#dung wright
@@ -188,6 +187,35 @@ SPIDER_MSB = 'event_msb' #fix vấn đề cốt lõi không nằm ở code Scrap
 SPIDER_VIB = 'event_vib' # draw 2 url đặc biệt
 SPIDER_ABB = 'event_abb'
 SPIDER_SSB = 'event_ssb' # draw 2 url đặc biệt
+SPIDER_NVB = 'event_nvb'
+SPIDER_EIB = 'event_eib'
+SPIDER_BVB = 'event_bvb' # fix--> không build vì toàn bộ tin nằm mục tin tức chung thời báo
+SPIDER_EVF = 'event_evf'
+SPIDER_VAB = 'event_vab' # cursor.execute(f'''DROP TABLE IF EXISTS {table_name}''')
+SPIDER_NAB = 'event_nab'
+SPIDER_PGB = 'event_pgb' # fixx--> hệ thống chặn bot và nó dùng vue.js để truyền dl
+SPIDER_SGB = 'event_sgb'
+SPIDER_VBB = 'event_vbb'
+
+SPIDER_VCS = 'event_vcs'
+SPIDER_HUT = 'event_hut'
+SPIDER_HTN = 'event_htn'
+SPIDER_HT1 = 'event_ht1'
+
+SPIDER_BSR = 'event_bsr'
+SPIDER_PLX = 'event_plx'
+SPIDER_GAS = 'event_gas'
+SPIDER_GEG = 'event_geg'
+SPIDER_PVC = 'event_pvc'
+SPIDER_PVS = 'event_pvs'
+SPIDER_PVD = 'event_pvd'
+SPIDER_PVB = 'event_pvb'
+SPIDER_PVT = 'event_pvt'
+SPIDER_PSH = 'event_psh'
+SPIDER_TDG = 'event_tdg'
+SPIDER_NT2 = 'event_nt2'
+SPIDER_VTO = 'event_vto'
+SPIDER_CNG = 'event_cng'
 # Thêm các tên Spider khác vào đây khi bạn mở rộng dự án
 ALL_SPIDERS = [ SPIDER_TLG, SPIDER_CAT, SPIDER_VOS,SPIDER_KBC,SPIDER_CII,
                SPIDER_PDR,SPIDER_CEO,SPIDER_QCG,SPIDER_EVG,SPIDER_VTP,SPIDER_VCG,SPIDER_LCG,
@@ -200,7 +228,7 @@ ALL_SPIDERS = [ SPIDER_TLG, SPIDER_CAT, SPIDER_VOS,SPIDER_KBC,SPIDER_CII,
                SPIDER_DXG,SPIDER_NTL,SPIDER_DIG,SPIDER_NVL,SPIDER_DTD,SPIDER_HDC,SPIDER_KDH,
                SPIDER_DC4,SPIDER_HDG,SPIDER_TCH,SPIDER_DXS,SPIDER_CRC,SPIDER_GVR,
                SPIDER_SIP,SPIDER_PHR,SPIDER_TIP,SPIDER_D2D,SPIDER_NTC,SPIDER_BCM,SPIDER_TTA,
-               SPIDER_SCS,SPIDER_SIV,SPIDER_FT1,SPIDER_HTG,SPIDER_MPC,SPIDER_SGB,
+               SPIDER_SCS,SPIDER_SIV,SPIDER_FT1,SPIDER_HTG,SPIDER_MPC,
                SPIDER_VSI,SPIDER_PHP,SPIDER_DVC,SPIDER_TV2,SPIDER_X26,SPIDER_BQP,SPIDER_EME,
                SPIDER_LHG,SPIDER_TCO,SPIDER_IDJ,SPIDER_TDC,SPIDER_KHG,SPIDER_DGC,SPIDER_YEG,
                SPIDER_SHI,SPIDER_HID,SPIDER_AAT,SPIDER_MWG,SPIDER_DGW,SPIDER_MSN,SPIDER_FPT,
@@ -218,5 +246,10 @@ ALL_SPIDERS = [ SPIDER_TLG, SPIDER_CAT, SPIDER_VOS,SPIDER_KBC,SPIDER_CII,
                SPIDER_FIR,SPIDER_VHM,SPIDER_NDN,SPIDER_VRE,
                
                SPIDER_STB,SPIDER_CTG,SPIDER_TPB,SPIDER_HDB,SPIDER_VPB,SPIDER_ACB,SPIDER_BID,
-               SPIDER_TCB,SPIDER_BVH,SPIDER_SHB,SPIDER_LPB,SPIDER_VIB,SPIDER_ABB,SPIDER_SSB
+               SPIDER_TCB,SPIDER_BVH,SPIDER_SHB,SPIDER_LPB,SPIDER_VIB,SPIDER_ABB,SPIDER_SSB,
+               SPIDER_NVB,SPIDER_EIB,SPIDER_VAB,SPIDER_EVF,SPIDER_SGB,SPIDER_NAB,SPIDER_VBB,
+
+               SPIDER_VCS,SPIDER_HUT,SPIDER_HTN,SPIDER_HT1,
+               SPIDER_BSR,SPIDER_PLX,SPIDER_GAS,SPIDER_GEG,SPIDER_PVC,SPIDER_PVS,SPIDER_PVD,
+               SPIDER_PVB,SPIDER_PVT,SPIDER_PSH,SPIDER_TDG,SPIDER_NT2,SPIDER_VTO,SPIDER_CNG
                ]

@@ -1,76 +1,87 @@
 import scrapy
+import sqlite3
 from stock_company_scraper.items import EventItem
 from datetime import datetime
-import re
+
 class EventSpider(scrapy.Spider):
     name = 'event_dgw'
     mcpcty = 'DGW'
-    # Thay thế bằng domain thực tế
     allowed_domains = ['digiworld.com.vn'] 
-    # Thay thế bằng URL thực tế chứa bảng dữ liệu
     start_urls = ['https://digiworld.com.vn/quan-he-nha-dau-tu'] 
 
-    # def start_requests(self):
-    #     yield scrapy.Request(
-    #     url=self.start_urls[0],
-    #     callback=self.parse,
-    #     # Thêm meta để kích hoạt Playwright
-    #     meta={'playwright': True}
-    # )
-        
-    def parse(self, response):
-        for item in response.css('div.investor-item'):
-            
-            # 1. Trích xuất tiêu đề (làm sạch khoảng trắng thừa)
-            title = item.css('.investor-item__title::text').get()
-            if title:
-                title = title.strip()
+    def __init__(self, *args, **kwargs):
+        super(EventSpider, self).__init__(*args, **kwargs)
+        self.db_path = 'stock_events.db'
 
-            # 2. Trích xuất ngày giờ
-            # Dữ liệu gốc thường có dạng: "10/12/2025 \n\t\t\t\t&nbsp; 10h06"
+    def parse(self, response):
+        # 1. Kết nối SQLite và chuẩn bị bảng
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        
+        table_name = f"{self.name}"
+        cursor.execute(f'''
+            CREATE TABLE IF NOT EXISTS {table_name} (
+                id TEXT PRIMARY KEY,
+                mcp TEXT,
+                date TEXT,
+                summary TEXT,
+                scraped_at TEXT,
+                web_source TEXT,
+                details_clean TEXT
+            )
+        ''')
+
+        # 2. Lặp qua các khối tin tức
+        for item in response.css('div.investor-item'):
+            # Trích xuất tiêu đề
+            title = item.css('.investor-item__title::text').get()
+            
+            # Trích xuất ngày giờ (xử lý khoảng trắng và &nbsp;)
             raw_datetime = item.css('.investor-item__datetime::text').getall()
-            # Kết hợp các phần văn bản và làm sạch
             clean_datetime = " ".join([t.strip() for t in raw_datetime if t.strip()])
             
-            # 3. Trích xuất link PDF
-            # Ưu tiên lấy từ nút "Tải về" (btn--primary)
+            # Trích xuất link PDF
             pdf_url = item.css('a.investor-item__btn--primary::attr(href)').get()
 
+            if not title:
+                continue
+
+            title_clean = title.strip()
+            # Lấy phần ngày (bỏ phần giờ nếu có) để convert
+            date_part = clean_datetime.split()[0] if clean_datetime else ""
+            iso_date = convert_date_to_iso8601(date_part)
+            full_pdf_link = response.urljoin(pdf_url) if pdf_url else ""
+
+            # -------------------------------------------------------
+            # 3. KIỂM TRA ĐIỂM DỪNG (INCREMENTAL LOGIC)
+            # -------------------------------------------------------
+            event_id = f"{title_clean}_{iso_date}".replace(' ', '_').strip()[:150]
+            
+            cursor.execute(f"SELECT id FROM {table_name} WHERE id = ?", (event_id,))
+            if cursor.fetchone():
+                self.logger.info(f"===> GẶP TIN CŨ: [{title_clean}]. DỪNG QUÉT.")
+                break 
+
+            # 4. Yield Item để Pipeline lưu DB và gửi Telegram
             e_item = EventItem()
             e_item['mcp'] = self.mcpcty
             e_item['web_source'] = self.allowed_domains[0]
-            e_item['summary'] = title
-            e_item['details_raw'] = str(title) +'\n' + str(response.urljoin(pdf_url))
-            e_item['date'] = convert_date_to_iso8601(clean_datetime.split()[0])               
+            e_item['summary'] = title_clean
+            e_item['date'] = iso_date
+            e_item['details_raw'] = f"{title_clean}\nLink tài liệu: {full_pdf_link}"
+            e_item['scraped_at'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            
             yield e_item
 
-from datetime import datetime
+        conn.close()
 
 def convert_date_to_iso8601(vietnam_date_str):
-    """
-    Chuyển đổi chuỗi ngày tháng từ định dạng 'DD/MM/YYYY' sang 'YYYY-MM-DD' (ISO 8601).
-    
-    :param vietnam_date_str: Chuỗi ngày tháng đầu vào, ví dụ: '20/09/2025'
-    :return: Chuỗi ngày tháng ISO 8601, ví dụ: '2025-09-20', hoặc None nếu có lỗi.
-    """
     if not vietnam_date_str:
         return None
-
-    # Định dạng đầu vào: Ngày/Tháng/Năm ('%d/%m/%Y')
     input_format = '%d/%m/%Y'
-    
-    # Định dạng đầu ra: Năm-Tháng-Ngày ('%Y-%m-%d') - chuẩn ISO 8601 cho ngày
     output_format = '%Y-%m-%d'
-
     try:
-        # 1. Parse chuỗi đầu vào thành đối tượng datetime
         date_object = datetime.strptime(vietnam_date_str.strip(), input_format)
-        
-        # 2. Định dạng lại đối tượng datetime thành chuỗi ISO 8601
-        iso_date_str = date_object.strftime(output_format)
-        
-        return iso_date_str
-    
-    except ValueError as e:
-        print(f"⚠️ Lỗi chuyển đổi ngày tháng '{vietnam_date_str}' (phải là DD/MM/YYYY): {e}")
+        return date_object.strftime(output_format)
+    except ValueError:
         return None

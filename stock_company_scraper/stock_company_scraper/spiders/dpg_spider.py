@@ -1,62 +1,83 @@
 import scrapy
+import sqlite3
 from stock_company_scraper.items import EventItem
 from datetime import datetime
-import re
+
 class EventSpider(scrapy.Spider):
     name = 'event_dpg'
     mcpcty = 'DPG'
-    # Thay thế bằng domain thực tế
     allowed_domains = ['datphuong.com.vn'] 
-    # Thay thế bằng URL thực tế chứa bảng dữ liệu
     start_urls = ['https://www.datphuong.com.vn/documents/tap-doan-dat-phuong/cong-bo-thong-tin'] 
 
+    def __init__(self, *args, **kwargs):
+        super(EventSpider, self).__init__(*args, **kwargs)
+        self.db_path = 'stock_events.db'
+
     def parse(self, response):
-        # 1. Selector chính: Lặp qua từng mục tin tức/PDF
+        # 1. Kết nối SQLite và chuẩn bị bảng
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        
+        table_name = f"{self.name}"
+        cursor.execute(f'''
+            CREATE TABLE IF NOT EXISTS {table_name} (
+                id TEXT PRIMARY KEY,
+                mcp TEXT,
+                date TEXT,
+                summary TEXT,
+                scraped_at TEXT,
+                web_source TEXT,
+                details_clean TEXT
+            )
+        ''')
+
+        # 2. Lặp qua từng mục tin tức/PDF (.pdf-item)
         items = response.css('.pdf-item')
         
         for item in items:
-            # Trích xuất dữ liệu thô
             title_text = item.css('h4 a::text').get()
             pdf_url = item.css('h4 a::attr(href)').get()
+            # Lấy ngày nằm trong span có class font-500
             date_raw = item.css('.pdf-action span.font-500::text').get()
             
-        
+            if not title_text:
+                continue
 
+            cleaned_title = title_text.strip()
+            iso_date = convert_date_to_iso8601(date_raw)
+            # Tạo link tuyệt đối cho file PDF
+            full_pdf_url = response.urljoin(pdf_url)
+
+            # -------------------------------------------------------
+            # 3. KIỂM TRA ĐIỂM DỪNG (INCREMENTAL LOGIC)
+            # -------------------------------------------------------
+            event_id = f"{cleaned_title}_{iso_date}".replace(' ', '_').strip()[:150]
+            
+            cursor.execute(f"SELECT id FROM {table_name} WHERE id = ?", (event_id,))
+            if cursor.fetchone():
+                self.logger.info(f"===> GẶP TIN CŨ: [{cleaned_title}]. DỪNG QUÉT.")
+                break 
+
+            # 4. Yield Item để truyền qua Pipeline
             e_item = EventItem()
             e_item['mcp'] = self.mcpcty
             e_item['web_source'] = self.allowed_domains[0]
-            e_item['summary'] = title_text
-            e_item['details_raw'] = str(title_text) +'\n' + str(pdf_url)
-            e_item['date'] = convert_date_to_iso8601(date_raw)               
+            e_item['summary'] = cleaned_title
+            e_item['date'] = iso_date
+            e_item['details_raw'] = f"{cleaned_title}\nLink PDF: {full_pdf_url}"
+            e_item['scraped_at'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            
             yield e_item
 
-from datetime import datetime
+        conn.close()
 
 def convert_date_to_iso8601(vietnam_date_str):
-    """
-    Chuyển đổi chuỗi ngày tháng từ định dạng 'DD/MM/YYYY' sang 'YYYY-MM-DD' (ISO 8601).
-    
-    :param vietnam_date_str: Chuỗi ngày tháng đầu vào, ví dụ: '20/09/2025'
-    :return: Chuỗi ngày tháng ISO 8601, ví dụ: '2025-09-20', hoặc None nếu có lỗi.
-    """
     if not vietnam_date_str:
         return None
-
-    # Định dạng đầu vào: Ngày/Tháng/Năm ('%d/%m/%Y')
     input_format = '%d/%m/%Y'
-    
-    # Định dạng đầu ra: Năm-Tháng-Ngày ('%Y-%m-%d') - chuẩn ISO 8601 cho ngày
     output_format = '%Y-%m-%d'
-
     try:
-        # 1. Parse chuỗi đầu vào thành đối tượng datetime
         date_object = datetime.strptime(vietnam_date_str.strip(), input_format)
-        
-        # 2. Định dạng lại đối tượng datetime thành chuỗi ISO 8601
-        iso_date_str = date_object.strftime(output_format)
-        
-        return iso_date_str
-    
-    except ValueError as e:
-        print(f"⚠️ Lỗi chuyển đổi ngày tháng '{vietnam_date_str}' (phải là DD/MM/YYYY): {e}")
+        return date_object.strftime(output_format)
+    except ValueError:
         return None

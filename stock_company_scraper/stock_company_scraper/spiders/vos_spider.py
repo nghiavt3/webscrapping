@@ -1,54 +1,75 @@
 import scrapy
+import sqlite3
 from stock_company_scraper.items import EventItem
 from datetime import datetime
-import re
+
 class EventSpider(scrapy.Spider):
     name = 'event_vos'
-    # Thay thế bằng domain thực tế
+    mcpcty = 'VOS'
     allowed_domains = ['vosco.vn'] 
-    # Thay thế bằng URL thực tế chứa bảng dữ liệu
     start_urls = ['https://www.vosco.vn/vi/a/tin-tuc-co-dong-129'] 
 
+    def __init__(self, *args, **kwargs):
+        super(EventSpider, self).__init__(*args, **kwargs)
+        self.db_path = 'stock_events.db'
+
     def parse(self, response):
-        articles = response.css('article.hentry__2')   
+        # 1. Khởi tạo SQLite
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        table_name = f"{self.name}"
+        cursor.execute(f'''
+            CREATE TABLE IF NOT EXISTS {table_name} (
+                id TEXT PRIMARY KEY, mcp TEXT, date TEXT, summary TEXT, 
+                scraped_at TEXT, web_source TEXT, details_clean TEXT
+            )
+        ''')
+
+        # 2. Duyệt qua từng bài viết
+        articles = response.css('article.hentry__2')
+        
         for article in articles:
-            # Trích xuất dữ liệu cho từng bài viết
-            
-            # 1. Tiêu đề: Dùng .hentry__title a::text
             title = article.css('.hentry__title a::text').get()
-            
-            # 2. URL bài viết: Dùng .hentry__title a::attr(href)
             url = article.css('.hentry__title a::attr(href)').get()
-            
-            # 3. Ngày đăng: Dùng time.date::text
+            # Lấy datetime gốc từ thẻ time (thường là YYYY-MM-DD)
             date_machine = article.css('time.date::attr(datetime)').get()
             
-            # 4. Tác giả: Dùng span.author::text
-            author = article.css('span.author::text').get()
-            
-            # 5. Lượt xem: Dùng span.categories::text
-            views = article.css('span.categories::text').get()
+            if not title or not date_machine:
+                continue
 
-            # 6. Thông tin file đính kèm
-            file_info = []
-            # Chọn tất cả các thẻ <a> trong class news-file
-            file_links = article.css('span.news-file a')
-            for link in file_links:
-                item = EventItem()
-                file_info.append({
-                    # Lấy thuộc tính title
-                    'file_name': link.css('::attr(title)').get(),
-                    # Lấy thuộc tính href
-                    'file_url': link.css('::attr(href)').get()
-                })   
-            # --- 4. Làm sạch và Gán vào Item ---
-            if title :
-                item['mcp'] = 'VOS'
-                item['web_source'] = 'vosco.vn'
-                item['summary'] = title.strip()
-                item['date'] = date_machine 
-                # Bước 1: Trích xuất danh sách chỉ chứa các URL
-                item['details_raw'] = str(title.strip()) +'\n'+ str(url)
-                #item['details_clean'] = download_url
-                #item['download_url'] = download_url
-                yield item
+            summary = title.strip()
+            # Đảm bảo định dạng chỉ lấy YYYY-MM-DD nếu chuỗi dài hơn
+            iso_date = date_machine[:10] 
+
+            # -------------------------------------------------------
+            # 3. KIỂM TRA ĐIỂM DỪNG (INCREMENTAL LOGIC)
+            # -------------------------------------------------------
+            event_id = f"{summary}_{iso_date}".replace(' ', '_').strip()[:150]
+            
+            cursor.execute(f"SELECT id FROM {table_name} WHERE id = ?", (event_id,))
+            if cursor.fetchone():
+                self.logger.info(f"===> GẶP TIN CŨ: [{summary}]. DỪNG QUÉT.")
+                break 
+
+            # 4. Trích xuất file đính kèm
+            file_links = []
+            for link in article.css('span.news-file a'):
+                f_url = link.css('::attr(href)').get()
+                f_title = link.css('::attr(title)').get() or "File đính kèm"
+                if f_url:
+                    file_links.append(f"{f_title}: {response.urljoin(f_url)}")
+
+            # 5. Yield Item
+            item = EventItem()
+            item['mcp'] = self.mcpcty
+            item['web_source'] = self.allowed_domains[0]
+            item['summary'] = summary
+            item['date'] = iso_date
+            
+            full_article_url = response.urljoin(url)
+            item['details_raw'] = f"{summary}\nURL: {full_article_url}\nFiles: {', '.join(file_links)}"
+            item['scraped_at'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            
+            yield item
+
+        conn.close()
