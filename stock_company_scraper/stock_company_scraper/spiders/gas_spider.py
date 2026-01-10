@@ -89,7 +89,7 @@ class EventSpider(scrapy.Spider):
             yield e_item
 
         conn.close()
-
+import unicodedata
 def parse_vn_date_simple(date_str):
     if not date_str:
         return None
@@ -117,11 +117,21 @@ def parse_vn_date_simple(date_str):
     month_map = {
         "Một": "01", "Hai": "02", "Ba": "03", "Tư": "04",
         "Năm": "05", "Sáu": "06", "Bảy": "07", "Tám": "08",
-        "Chín": "09", "Mười": "10", "Mười Một": "11", "Mười Hai": "12",
+        "Chín": "09", "Mười": "10", "Mười Một": "11", "Mười Hai": "12",
         "1": "01", "2": "02", "3": "03", "4": "04", "5": "05", "6": "06",
         "7": "07", "8": "08", "9": "09", "10": "10", "11": "11", "12": "12"
     }
 
-    month = month_map.get(month_raw, "01")
+    # 1. Chuẩn hóa month_raw về NFC (Dựng sẵn) và xóa khoảng trắng thừa
+    month_raw_clean = unicodedata.normalize('NFC', month_raw).strip()
+    
+    # 2. Chuẩn hóa tất cả Key trong month_map về NFC để đảm bảo khớp 100%
+    # (Đôi khi code bạn viết ở editor dùng chuẩn khác với dữ liệu web)
+    month_map_nfc = {unicodedata.normalize('NFC', k): v for k, v in month_map.items()}
+
+    # 3. Thực hiện lấy dữ liệu
+    month = month_map_nfc.get(month_raw_clean)
+
+    #month = month_map.get(month_raw)
     
     return f"{year}-{month}-{day}"

@@ -34,7 +34,7 @@ class EventSpider(scrapy.Spider):
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
         table_name = f"{self.name}"
-        cursor.execute(f'''DROP TABLE IF EXISTS {table_name}''')
+        #cursor.execute(f'''DROP TABLE IF EXISTS {table_name}''')
         cursor.execute(f'''
             CREATE TABLE IF NOT EXISTS {table_name} (
                 id TEXT PRIMARY KEY, mcp TEXT, date TEXT, summary TEXT, 
@@ -84,7 +84,7 @@ def convert_date_to_iso8601(vietnam_date_str):
     if not vietnam_date_str:
         return None
     try:
-        date_object = datetime.strptime(vietnam_date_str.strip(), '%d/%m/%Y %H:%M')
+        date_object = datetime.strptime(vietnam_date_str.strip(), '%d/%m/%Y - %H:%M')
         return date_object.strftime('%Y-%m-%d')
     except ValueError:
         return None

@@ -6,26 +6,35 @@ from datetime import datetime
 class EventSpider(scrapy.Spider):
     name = 'event_gvr'
     mcpcty = 'GVR'
-    allowed_domains = ['rubbergroup.vn'] 
-    start_urls = ['https://rubbergroup.vn/quan-he-co-dong/cong-bo-thong-tin'] 
+    allowed_domains = ['vrg.vn'] 
 
     def __init__(self, *args, **kwargs):
         super(EventSpider, self).__init__(*args, **kwargs)
         self.db_path = 'stock_events.db'
 
     def start_requests(self):
-        for url in self.start_urls:
+        urls = [
+            ('https://vrg.vn/quan-he-co-dong/dai-hoi-dong-co-dong/', self.parse_generic),
+            ('https://vrg.vn/quan-he-co-dong/tin-co-dong/', self.parse_generic),
+             ('https://vrg.vn/quan-he-co-dong/bao-cao-tai-chinh/', self.parse_generic),
+             ('https://vrg.vn/quan-he-co-dong/bao-cao-thuong-nien/', self.parse_generic),
+             
+            
+        ]
+        for url, callback in urls:
             yield scrapy.Request(
-                url=url,
-                callback=self.parse,
-                meta={'playwright': True}
+                url=url, 
+                callback=callback,
+                #meta={'playwright': True}
             )
 
-    def parse(self, response):
+    def parse_generic(self, response):
+        """Hàm parse dùng chung cho các chuyên mục của SeABank"""
         # 1. Khởi tạo SQLite
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
         table_name = f"{self.name}"
+        #cursor.execute(f'''DROP TABLE IF EXISTS {table_name}''')
         cursor.execute(f'''
             CREATE TABLE IF NOT EXISTS {table_name} (
                 id TEXT PRIMARY KEY, mcp TEXT, date TEXT, summary TEXT, 
@@ -33,42 +42,38 @@ class EventSpider(scrapy.Spider):
             )
         ''')
 
-        # 2. Lọc các hàng chứa file tài liệu (tr[class^="file"])
-        rows = response.css('table.tbl > tbody > tr[class^="file"]')
-        
-        for row in rows:
-            # Trích xuất tiêu đề và ngày (nằm chung trong td thứ 2)
-            title = row.css('td:nth-child(2) section p::text').get()
-            date_raw = row.css('td:nth-child(2) span.date2::text').get()
-            download_url = row.css('td:nth-child(3) a::attr(href)').get()
+        # Chọn tất cả các hàng dữ liệu
+        items = response.css('div.e-loop-item')
 
-            if not title:
+        for item in items:
+            title = item.css('h3.elementor-heading-title a::text').get()
+            relative_url = item.css('h3.elementor-heading-title a::attr(href)').get()
+            date_str = item.css('.elementor-icon-list-text::text').get()
+
+            if not title or not date_str:
                 continue
 
-            # Làm sạch dữ liệu
-            cleaned_title = title.strip()
-            # Loại bỏ dấu ngoặc đơn quanh ngày: (25/12/2025) -> 25/12/2025
-            clean_date_str = date_raw.strip('()').strip() if date_raw else ""
-            iso_date = convert_date_to_iso8601(clean_date_str)
-            full_url = response.urljoin(download_url)
+            summary = title.strip()
+            iso_date = convert_date_to_iso8601(date_str)
+            absolute_url = response.urljoin(relative_url)
 
             # -------------------------------------------------------
             # 3. KIỂM TRA ĐIỂM DỪNG (INCREMENTAL LOGIC)
             # -------------------------------------------------------
-            event_id = f"{cleaned_title}_{iso_date}".replace(' ', '_').strip()[:150]
+            event_id = f"{summary}_{iso_date}".replace(' ', '_').strip()[:150]
             
             cursor.execute(f"SELECT id FROM {table_name} WHERE id = ?", (event_id,))
             if cursor.fetchone():
-                self.logger.info(f"===> GẶP TIN CŨ: [{cleaned_title}]. DỪNG QUÉT.")
+                self.logger.info(f"===> GẶP TIN CŨ: [{summary}]. DỪNG QUÉT CHUYÊN MỤC.")
                 break 
 
             # 4. Yield Item
             e_item = EventItem()
             e_item['mcp'] = self.mcpcty
             e_item['web_source'] = self.allowed_domains[0]
-            e_item['summary'] = cleaned_title
+            e_item['summary'] = summary
             e_item['date'] = iso_date
-            e_item['details_raw'] = f"{cleaned_title}\nLink: {full_url}"
+            e_item['details_raw'] = f"{summary}\nLink: {absolute_url}"
             e_item['scraped_at'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
             
             yield e_item

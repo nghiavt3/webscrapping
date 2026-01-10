@@ -216,6 +216,21 @@ SPIDER_TDG = 'event_tdg'
 SPIDER_NT2 = 'event_nt2'
 SPIDER_VTO = 'event_vto'
 SPIDER_CNG = 'event_cng'
+
+SPIDER_DRC = 'event_drc'
+SPIDER_CSM = 'event_csm'
+SPIDER_DPR = 'event_dpr'
+SPIDER_TRC = 'event_trc'
+
+SPIDER_MIG = 'event_mig'
+SPIDER_BMI = 'event_bmi'
+SPIDER_PGI = 'event_pgi'
+SPIDER_BIC = 'event_bic'
+SPIDER_ABI = 'event_abi'
+SPIDER_PTI = 'event_pti'
+SPIDER_VNR = 'event_vnr'
+#SPIDER_AIC = 'event_aic' không kiếm dc website chính thức
+SPIDER_PVI = 'event_pvi'
 # Thêm các tên Spider khác vào đây khi bạn mở rộng dự án
 ALL_SPIDERS = [ SPIDER_TLG, SPIDER_CAT, SPIDER_VOS,SPIDER_KBC,SPIDER_CII,
                SPIDER_PDR,SPIDER_CEO,SPIDER_QCG,SPIDER_EVG,SPIDER_VTP,SPIDER_VCG,SPIDER_LCG,
@@ -251,5 +266,7 @@ ALL_SPIDERS = [ SPIDER_TLG, SPIDER_CAT, SPIDER_VOS,SPIDER_KBC,SPIDER_CII,
 
                SPIDER_VCS,SPIDER_HUT,SPIDER_HTN,SPIDER_HT1,
                SPIDER_BSR,SPIDER_PLX,SPIDER_GAS,SPIDER_GEG,SPIDER_PVC,SPIDER_PVS,SPIDER_PVD,
-               SPIDER_PVB,SPIDER_PVT,SPIDER_PSH,SPIDER_TDG,SPIDER_NT2,SPIDER_VTO,SPIDER_CNG
+               SPIDER_PVB,SPIDER_PVT,SPIDER_PSH,SPIDER_TDG,SPIDER_NT2,SPIDER_VTO,SPIDER_CNG,
+
+               SPIDER_DRC,SPIDER_CSM,SPIDER_DPR,SPIDER_TRC
                ]

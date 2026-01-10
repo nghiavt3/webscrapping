@@ -2,7 +2,7 @@ import scrapy
 import sqlite3
 from stock_company_scraper.items import EventItem
 from datetime import datetime
-
+import re
 class EventSpider(scrapy.Spider):
     name = 'event_phr'
     mcpcty = 'PHR'
@@ -27,6 +27,7 @@ class EventSpider(scrapy.Spider):
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
         table_name = f"{self.name}"
+        cursor.execute(f'''DROP TABLE IF EXISTS {table_name}''')
         cursor.execute(f'''
             CREATE TABLE IF NOT EXISTS {table_name} (
                 id TEXT PRIMARY KEY, mcp TEXT, date TEXT, summary TEXT, 
@@ -45,14 +46,19 @@ class EventSpider(scrapy.Spider):
             download_container = block.css('div.bc-list-down-in')
             view_url = download_container.css('a:nth-child(1)::attr(href)').get()
             download_url = download_container.css('span a:nth-child(1)::attr(href)').get()
-            
+            match = re.search(r'(\d{8})(?=\.pdf)', download_url)
+            if match:
+                date_str = match.group(1)
+                date_obj = convert_date_to_iso8601(date_str)
+                iso_date = date_obj
+            else:
+                iso_date = None
             if not title:
                 continue
 
             summary = title.strip()
             # Vì PHR không hiện ngày ở list, ta dùng ngày quét hoặc parse từ link nếu có
             # Ở đây tôi để mặc định ngày hiện tại hoặc bạn có thể vào page detail để lấy
-            iso_date = datetime.now().strftime('%Y-%m-%d') 
             full_view_url = response.urljoin(view_url)
 
             # -------------------------------------------------------
@@ -70,10 +76,19 @@ class EventSpider(scrapy.Spider):
             e_item['mcp'] = self.mcpcty
             e_item['web_source'] = self.allowed_domains[0]
             e_item['summary'] = summary
-            e_item['date'] = None
+            e_item['date'] = iso_date
             e_item['details_raw'] = f"{summary}\nView PDF: {full_view_url}\nDownload: {response.urljoin(download_url)}"
             e_item['scraped_at'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
             
             yield e_item
 
         conn.close()
+    
+def convert_date_to_iso8601(vietnam_date_str):
+    if not vietnam_date_str:
+        return None
+    try:
+        date_object = datetime.strptime(vietnam_date_str.strip(), '%d%m%Y')
+        return date_object.strftime('%Y-%m-%d')
+    except ValueError:
+        return None

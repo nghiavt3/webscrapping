@@ -31,6 +31,7 @@ class EventSpider(scrapy.Spider):
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
         table_name = f"{self.name}"
+        #cursor.execute(f'''DROP TABLE IF EXISTS {table_name}''')
         cursor.execute(f'''
             CREATE TABLE IF NOT EXISTS {table_name} (
                 id TEXT PRIMARY KEY, mcp TEXT, date TEXT, summary TEXT, 
@@ -46,12 +47,12 @@ class EventSpider(scrapy.Spider):
             meta_text = post.css('.post-default__meta::text').getall()
             # meta_text thường trả về [' | ', '12/12/2025']
             date_str = meta_text[-1].strip() if meta_text else None
-            
+            clean_date = date_str.split('|')[-1].strip()
             if not title or not date_str:
                 continue
 
             summary = title.strip()
-            iso_date = convert_date_to_iso8601(date_str)
+            iso_date = convert_date_to_iso8601(clean_date)
             absolute_url = response.urljoin(relative_url)
 
             # -------------------------------------------------------
