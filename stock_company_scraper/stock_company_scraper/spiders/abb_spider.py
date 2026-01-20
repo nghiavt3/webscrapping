@@ -1,65 +1,92 @@
 import scrapy
+import sqlite3
+import os
 from stock_company_scraper.items import EventItem
 from datetime import datetime
 import re
+
 class EventSpider(scrapy.Spider):
     name = 'event_abb'
     mcpcty = 'ABB'
-    # Thay thế bằng domain thực tế
     allowed_domains = ['abbank.vn'] 
-    # Thay thế bằng URL thực tế chứa bảng dữ liệu
     start_urls = ['https://abbank.vn/thong-tin/tin-tuc-co-dong'] 
 
+    def __init__(self, *args, **kwargs):
+        super(EventSpider, self).__init__(*args, **kwargs)
+        # Đường dẫn file db khớp với cấu trúc dự án của bạn
+        self.db_path = 'stock_events.db'
+
     def parse(self, response):
+        # Mở kết nối SQLite
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        
+        # Đảm bảo bảng tồn tại (Cấu trúc chuẩn bạn đã hiệu chỉnh)
+        table_name = f"{self.name}"
+        cursor.execute(f'''
+            CREATE TABLE IF NOT EXISTS {table_name} (
+                id TEXT PRIMARY KEY,
+                mcp TEXT,
+                date TEXT,
+                summary TEXT,
+                scraped_at TEXT,
+                web_source TEXT,
+                details_clean TEXT
+            )
+        ''')
+
         # 1. Lấy danh sách tất cả các thông báo (records)
         news_items = response.css('div.main-content ul.list > li')
         
         for item in news_items:
-            # 2. Trích xuất Tiêu đề, URL và Ngày đăng cho mỗi mục
+            # 2. Trích xuất Tiêu đề, URL và Ngày đăng
             title = item.css('h3.title a::text').get()
             url = item.css('h3.title a::attr(href)').get()
             
-            # Trích xuất Ngày đăng và làm sạch chuỗi
+            # Trích xuất Ngày đăng
             date_text = item.css('p.date::text').getall()
-            # Lấy phần tử cuối cùng và loại bỏ khoảng trắng dư thừa
-            # Ví dụ: [' Đăng ngày:', '03/12/2025 '] -> '03/12/2025 '
-            date = date_text[-1].strip() if date_text else None
+            raw_date = date_text[-1].strip() if date_text else None
+            
+            # Làm sạch dữ liệu để tạo ID
+            title_clean = title.strip() if title else ""
+            iso_date = convert_date_to_iso8601(raw_date)
 
+            # -------------------------------------------------------
+            # 3. KIỂM TRA ĐIỂM DỪNG (INCREMENTAL LOGIC)
+            # -------------------------------------------------------
+            # Tạo ID duy nhất theo quy tắc chuẩn của bạn
+            event_id = f"{title_clean}_{iso_date}".replace('/', '-').replace('.', '_').strip()[:150]
+            
+            cursor.execute(f"SELECT id FROM {table_name} WHERE id = ?", (event_id,))
+            if cursor.fetchone():
+                self.logger.info(f"===> GẶP TIN CŨ: [{title_clean}]. DỪNG QUÉT GIA TĂNG.")
+                conn.close()
+                break # THOÁT NGAY LẬP TỨC
+
+            # 4. Đưa dữ liệu vào Item nếu là tin mới
             e_item = EventItem()
             e_item['mcp'] = self.mcpcty
             e_item['web_source'] = self.allowed_domains[0]
-            e_item['summary'] = title
-            e_item['details_raw'] = str(title) +'\n' + str(url)
-            e_item['date'] = convert_date_to_iso8601(date)               
+            e_item['summary'] = title_clean
+            e_item['details_raw'] = f"{title_clean}\nLink: {response.urljoin(url) if url else 'N/A'}"
+            e_item['date'] = iso_date 
+            e_item['scraped_at'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            
             yield e_item
 
-from datetime import datetime
+        conn.close()
 
+# Giữ nguyên hàm convert chuẩn của bạn
 def convert_date_to_iso8601(vietnam_date_str):
-    """
-    Chuyển đổi chuỗi ngày tháng từ định dạng 'DD/MM/YYYY' sang 'YYYY-MM-DD' (ISO 8601).
-    
-    :param vietnam_date_str: Chuỗi ngày tháng đầu vào, ví dụ: '20/09/2025'
-    :return: Chuỗi ngày tháng ISO 8601, ví dụ: '2025-09-20', hoặc None nếu có lỗi.
-    """
     if not vietnam_date_str:
         return None
 
-    # Định dạng đầu vào: Ngày/Tháng/Năm ('%d/%m/%Y')
     input_format = '%d/%m/%Y'
-    
-    # Định dạng đầu ra: Năm-Tháng-Ngày ('%Y-%m-%d') - chuẩn ISO 8601 cho ngày
     output_format = '%Y-%m-%d'
 
     try:
-        # 1. Parse chuỗi đầu vào thành đối tượng datetime
         date_object = datetime.strptime(vietnam_date_str.strip(), input_format)
-        
-        # 2. Định dạng lại đối tượng datetime thành chuỗi ISO 8601
         iso_date_str = date_object.strftime(output_format)
-        
         return iso_date_str
-    
     except ValueError as e:
-        print(f"⚠️ Lỗi chuyển đổi ngày tháng '{vietnam_date_str}' (phải là DD/MM/YYYY): {e}")
         return None

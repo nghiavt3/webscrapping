@@ -9,3 +9,6 @@ stock_company_scraper/news.json
 
 # Bỏ qua khóa bí mật (Rất quan trọng)
 stock_company_scraper/stock_company_scraper/firebase-admin-key.json
+
+firebase-admin-key.json
+**/firebase-admin-key.json

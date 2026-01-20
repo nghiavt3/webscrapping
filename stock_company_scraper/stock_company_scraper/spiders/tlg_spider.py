@@ -1,47 +1,74 @@
 import scrapy
+import sqlite3
 from stock_company_scraper.items import EventItem
 from datetime import datetime
-import re
+
 class EventSpider(scrapy.Spider):
     name = 'event_tlg'
-    # Thay thế bằng domain thực tế
+    mcpcty = 'TLG'
     allowed_domains = ['thienlonggroup.com'] 
-    # Thay thế bằng URL thực tế chứa bảng dữ liệu
     start_urls = ['https://thienlonggroup.com/quan-he-co-dong/tat-ca'] 
 
+    def __init__(self, *args, **kwargs):
+        super(EventSpider, self).__init__(*args, **kwargs)
+        self.db_path = 'stock_events.db'
+
     def parse(self, response):
-        for item in response.css('.list-news-2 .item'):
+        # 1. Khởi tạo kết nối SQLite
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        table_name = f"{self.name}"
+        cursor.execute(f'''
+            CREATE TABLE IF NOT EXISTS {table_name} (
+                id TEXT PRIMARY KEY, mcp TEXT, date TEXT, summary TEXT, 
+                scraped_at TEXT, web_source TEXT, details_clean TEXT
+            )
+        ''')
+
+        # 2. Duyệt qua danh sách tin tức
+        items = response.css('.list-news-2 .item')
+        
+        for item in items:
+            title = item.css('div.title a::text').get()
+            raw_date = item.css('span.date::text').get()
+            download_url = item.css('a.down::attr(href)').get()
+
+            if not title or not raw_date:
+                continue
+
+            summary = title.strip()
+            iso_date = convert_date_to_iso8601(raw_date.strip())
+            
+            # -------------------------------------------------------
+            # 3. KIỂM TRA ĐIỂM DỪNG (INCREMENTAL LOGIC)
+            # -------------------------------------------------------
+            # Tạo ID duy nhất dựa trên nội dung và ngày
+            event_id = f"{summary}_{iso_date}".replace(' ', '_').strip()[:150]
+            
+            cursor.execute(f"SELECT id FROM {table_name} WHERE id = ?", (event_id,))
+            if cursor.fetchone():
+                self.logger.info(f"===> GẶP TIN CŨ: [{summary}]. DỪNG QUÉT.")
+                break 
+
+            # 4. Đóng gói Item
             e_item = EventItem()
-            e_item['mcp'] = 'TLG'
-            e_item['web_source'] = 'thienlonggroup.com'
-            e_item['summary'] = item.css('div.title a::text').get().strip()
-            e_item['details_raw'] =item.css('div.title a::text').get().strip() +' \n'+ item.css('a.down::attr(href)').get()
-            e_item['date'] = convert_date_to_iso8601(item.css('span.date::text').get().strip())               
+            e_item['mcp'] = self.mcpcty
+            e_item['web_source'] = self.allowed_domains[0]
+            e_item['summary'] = summary
+            e_item['date'] = iso_date
+            e_item['details_raw'] = f"{summary}\nLink: {response.urljoin(download_url) if download_url else 'N/A'}"
+            e_item['scraped_at'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            
             yield e_item
 
-from datetime import datetime
+        conn.close()
 
 def convert_date_to_iso8601(vietnam_date_str):
-    """
-    Chuyển đổi chuỗi ngày tháng từ định dạng 'DD.MM.YYYY' sang 'YYYY-MM-DD' (ISO 8601).
-    
-    :param vietnam_date_str: Chuỗi ngày tháng đầu vào, ví dụ: '04.12.2025'
-    :return: Chuỗi ngày tháng ISO 8601, ví dụ: '2025-12-04'
-    :raises ValueError: Nếu chuỗi đầu vào không đúng định dạng.
-    """
     if not vietnam_date_str:
-        return None  # Xử lý trường hợp chuỗi rỗng hoặc None
-
+        return None
     try:
-        # 1. Định nghĩa định dạng đầu vào ('%d.%m.%Y') và parse chuỗi thành đối tượng datetime
+        # Thiên Long dùng định dạng DD.MM.YYYY
         date_object = datetime.strptime(vietnam_date_str.strip(), '%d.%m.%Y')
-        
-        # 2. Định dạng lại đối tượng datetime thành chuỗi ISO 8601 ('YYYY-MM-DD')
-        iso_date_str = date_object.strftime('%Y-%m-%d')
-        
-        return iso_date_str
-    
-    except ValueError as e:
-        print(f"Lỗi chuyển đổi ngày tháng '{vietnam_date_str}': {e}")
-        return None # Trả về None hoặc một giá trị mặc định nếu có lỗi    
-
+        return date_object.strftime('%Y-%m-%d')
+    except ValueError:
+        return None
