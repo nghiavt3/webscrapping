@@ -9,7 +9,8 @@ class EventSpider(scrapy.Spider):
     mcpcty = 'TNA'
     allowed_domains = ['gateway.fpts.com.vn'] 
     # API URL cho TNA - Lấy cả tin tức và CBTT
-    start_urls = ['https://gateway.fpts.com.vn/news/api/gateway/v1/mobile/list?folder=86&code=TNA&pageSize=8&selectedPage=1&cbtt=0&from=01-01-1970&to=01-01-3000&newsType=1'] 
+    start_urls = ['https://gateway.fpts.com.vn/news/api/gateway/v1/mobile/list?folder=86&code=TNA&pageSize=8&selectedPage=1&cbtt=0&from=01-01-1970&to=01-01-3000&newsType=1',
+                  'https://gateway.fpts.com.vn/news/api/gateway/v1/mobile/list?folder=86&code=TNA&pageSize=8&selectedPage=1&cbtt=1&from=01-01-1970&to=01-01-3000&newsType=1'] 
 
     def __init__(self, *args, **kwargs):
         super(EventSpider, self).__init__(*args, **kwargs)

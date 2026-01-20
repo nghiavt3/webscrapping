@@ -3,7 +3,7 @@ import requests
 import logging
 import html  # Thêm thư viện này để xử lý ký tự HTML
 from itemadapter import ItemAdapter
-
+from plyer import notification  # Thêm thư viện này
 class StockCompanyScraperPipeline:
     """Pipeline làm sạch dữ liệu thô."""
     def process_item(self, item, spider):
@@ -75,12 +75,28 @@ class SQLiteStoragePipeline:
                 logging.info(f"🆕 ĐÃ LƯU TIN MỚI VÀ GỬI TELEGRAM: {item.get('mcp')}")
 
                 # Gửi thông báo Telegram cho tin mới
-                #self._send_telegram_notification(item)
+                self._send_telegram_notification(item)
+               # self._show_desktop_notification(item)
             except Exception as e:
                 logging.error(f"Lỗi lưu SQLite: {e}")
 
         conn.close()
         return item
+
+    def _show_desktop_notification(self, data):
+        """Hàm hiển thị popup thông báo trên màn hình máy tính."""
+        try:
+            mcp = str(data.get('mcp', 'N/A')).upper()
+            summary = str(data.get('summary', 'Tin mới về cổ phiếu'))
+            
+            notification.notify(
+                title=f"🔔 TIN MỚI: {mcp}",
+                message=summary[:150] + "...", # Giới hạn ký tự hiển thị trên popup
+                app_name="Stock Scraper",
+                timeout=10, # Popup biến mất sau 10 giây
+            )
+        except Exception as e:
+            logging.error(f"Không thể hiển thị popup: {e}")
 
     def _send_telegram_notification(self, data):
         """Hàm gửi tin nhắn HTML tới Telegram với xử lý lỗi ký tự đặc biệt."""

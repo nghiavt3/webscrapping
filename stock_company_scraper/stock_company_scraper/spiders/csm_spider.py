@@ -9,7 +9,10 @@ class EventSpider(scrapy.Spider):
     mcpcty = 'CSM'
     allowed_domains = ['gateway.fpts.com.vn'] 
     # API URL với tham số cbtt=1 để tập trung vào Công bố thông tin pháp lý
-    start_urls = ['https://gateway.fpts.com.vn/news/api/gateway/v1/mobile/list?folder=86&code=CSM&pageSize=8&selectedPage=1&cbtt=0&from=01-01-1970&to=01-01-3000&newsType=1'] 
+    start_urls = [
+        'https://gateway.fpts.com.vn/news/api/gateway/v1/mobile/list?folder=86&code=CSM&pageSize=8&selectedPage=1&cbtt=0&from=01-01-1970&to=01-01-3000&newsType=1',
+        'https://gateway.fpts.com.vn/news/api/gateway/v1/mobile/list?folder=86&code=CSM&pageSize=8&selectedPage=1&cbtt=1&from=01-01-1970&to=01-01-3000&newsType=1'
+        ] 
 
     def __init__(self, *args, **kwargs):
         super(EventSpider, self).__init__(*args, **kwargs)

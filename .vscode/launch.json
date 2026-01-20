@@ -1,0 +1,21 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Scrapy Crawl Debug",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "scrapy",
+            "args": [
+                "crawl",
+                "event_tnh" // <--- Đảm bảo tên crawler của bạn chính xác
+            ],
+            // "args": [
+            //     "python",
+            //     "gui_tracker.py" // <--- Đảm bảo tên crawler của bạn chính xác
+            // ],
+            
+            "cwd": "${workspaceFolder}/stock_company_scraper/stock_company_scraper" // <--- Đảm bảo chạy từ thư mục gốc của project Scrapy
+        }
+    ]
+}

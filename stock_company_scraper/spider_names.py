@@ -22,7 +22,6 @@ SPIDER_HBC = 'event_hbc'
 SPIDER_DGT = 'event_dgt'
 SPIDER_BVB = 'event_bvb' #chưa khởi tạo file fix
 SPIDER_MZG = 'event_mzg'
-SPIDER_DDV = 'event_ddv' #fix
 SPIDER_VGI = 'event_vgi'
 SPIDER_DRI = 'event_dri'
 SPIDER_HNM = 'event_hnm'
@@ -231,6 +230,101 @@ SPIDER_PTI = 'event_pti'
 SPIDER_VNR = 'event_vnr'
 #SPIDER_AIC = 'event_aic' không kiếm dc website chính thức
 SPIDER_PVI = 'event_pvi'
+
+
+SPIDER_LAS = 'event_las'
+SPIDER_DPM = 'event_dpm'
+SPIDER_DCM = 'event_dcm'
+SPIDER_DDV = 'event_ddv'#fix
+SPIDER_BFC = 'event_bfc'# tìm dc api và lấy json về
+SPIDER_DHB = 'event_dhb'# tìm dc api và lấy json về
+SPIDER_HCD = 'event_hcd'
+
+SPIDER_TSC = 'event_tsc'
+SPIDER_CSV = 'event_csv'
+SPIDER_ABS = 'event_abs'
+SPIDER_HTV = 'event_htv'
+
+SPIDER_HAG = 'event_hag'
+SPIDER_HNG = 'event_hng'
+SPIDER_DBC = 'event_dbc'
+SPIDER_VNM = 'event_vnm'
+SPIDER_BAF = 'event_baf'
+SPIDER_VFG = 'event_vfg'
+SPIDER_PAN = 'event_pan'
+SPIDER_VLC = 'event_vlc'
+
+
+SPIDER_IDI = 'event_idi'
+SPIDER_ANV = 'event_anv'
+SPIDER_VHC = 'event_vhc'
+
+SPIDER_CMX = 'event_cmx'
+SPIDER_FMC = 'event_fmc'
+SPIDER_SEA = 'event_sea'
+SPIDER_ACL = 'event_acl'
+SPIDER_ABT = 'event_abt'
+SPIDER_KHS = 'event_khs'
+
+SPIDER_MSH = 'event_msh'
+SPIDER_GIL = 'event_gil'
+SPIDER_TNG = 'event_tng'
+SPIDER_TCM = 'event_tcm'
+SPIDER_STK = 'event_stk'
+SPIDER_PPH = 'event_pph'
+
+SPIDER_HGM = 'event_hgm'
+SPIDER_BMC = 'event_bmc'
+SPIDER_KSV = 'event_ksv'
+SPIDER_TNT = 'event_tnt'
+SPIDER_HMG = 'event_hmg'
+SPIDER_C32 = 'event_c32'
+SPIDER_KCB = 'event_kcb'
+SPIDER_CST = 'event_cst'
+SPIDER_VLB = 'event_vlb'
+SPIDER_NNC = 'event_nnc'
+
+SPIDER_LSS = 'event_lss'
+SPIDER_QNS = 'event_qns'
+SPIDER_SBT = 'event_sbt'
+SPIDER_SLS = 'event_sls' # error 500 , server phát hiện bot, json thì ok
+SPIDER_VCF = 'event_vcf'
+SPIDER_CBS = 'event_cbs'
+
+SPIDER_FOC = 'event_foc' #server 500
+SPIDER_TTN = 'event_ttn'
+SPIDER_CMG = 'event_cmg'
+SPIDER_VTK = 'event_vtk'
+SPIDER_ELC = 'event_elc'
+SPIDER_SAM = 'event_sam'
+SPIDER_ST8 = 'event_st8'
+SPIDER_SGT = 'event_sgt' # server down
+SPIDER_ITD = 'event_itd'
+SPIDER_HVH = 'event_hvh'
+SPIDER_MFS = 'event_mfs'
+SPIDER_ABC = 'event_abc'
+SPIDER_ICT = 'event_ict'
+SPIDER_MST = 'event_mst'
+SPIDER_DDG = 'event_ddg'
+
+SPIDER_TNH = 'event_tnh'
+
+SPIDER_AMV = 'event_amv'
+SPIDER_JVC = 'event_jvc'
+SPIDER_DVN = 'event_dvn'
+SPIDER_IMP = 'event_imp'
+SPIDER_DVM = 'event_dvm'
+SPIDER_DCL = 'event_dcl'
+SPIDER_PBC = 'event_pbc'
+SPIDER_DHT = 'event_dht'
+SPIDER_DBD = 'event_dbd'
+SPIDER_DHG = 'event_dhg'
+SPIDER_DBT = 'event_dbt'
+SPIDER_DP3 = 'event_dp3'
+SPIDER_VMD = 'event_vmd'#error ??
+SPIDER_DDN = 'event_ddn'
+SPIDER_DTG = 'event_dtg'
+
 # Thêm các tên Spider khác vào đây khi bạn mở rộng dự án
 ALL_SPIDERS = [ SPIDER_TLG, SPIDER_CAT, SPIDER_VOS,SPIDER_KBC,SPIDER_CII,
                SPIDER_PDR,SPIDER_CEO,SPIDER_QCG,SPIDER_EVG,SPIDER_VTP,SPIDER_VCG,SPIDER_LCG,
@@ -268,5 +362,25 @@ ALL_SPIDERS = [ SPIDER_TLG, SPIDER_CAT, SPIDER_VOS,SPIDER_KBC,SPIDER_CII,
                SPIDER_BSR,SPIDER_PLX,SPIDER_GAS,SPIDER_GEG,SPIDER_PVC,SPIDER_PVS,SPIDER_PVD,
                SPIDER_PVB,SPIDER_PVT,SPIDER_PSH,SPIDER_TDG,SPIDER_NT2,SPIDER_VTO,SPIDER_CNG,
 
-               SPIDER_DRC,SPIDER_CSM,SPIDER_DPR,SPIDER_TRC
+               SPIDER_DRC,SPIDER_CSM,SPIDER_DPR,SPIDER_TRC,
+               SPIDER_MIG,SPIDER_BMI,SPIDER_PGI,SPIDER_BIC,SPIDER_ABI,SPIDER_PTI,SPIDER_VNR,
+               SPIDER_PVI,
+
+               SPIDER_LAS,SPIDER_DPM,SPIDER_DCM,SPIDER_DDV,SPIDER_BFC,SPIDER_DHB,SPIDER_HCD,
+               SPIDER_TSC,SPIDER_CSV,SPIDER_ABS,SPIDER_HTV,
+
+               SPIDER_HAG,SPIDER_HNG,SPIDER_DBC,SPIDER_VNM,SPIDER_BAF,SPIDER_VFG,SPIDER_PAN,
+               SPIDER_VLC,
+
+               SPIDER_IDI,SPIDER_ANV,SPIDER_VHC,SPIDER_CMX,SPIDER_FMC,SPIDER_SEA,SPIDER_ACL,
+               SPIDER_ABT,SPIDER_KHS,
+
+               SPIDER_LSS,SPIDER_QNS,SPIDER_SBT,SPIDER_SLS,SPIDER_VCF,SPIDER_CBS,
+
+               SPIDER_TTN,SPIDER_CMG,SPIDER_VTK,SPIDER_ELC,SPIDER_SAM,SPIDER_ST8,SPIDER_ITD,
+               SPIDER_HVH,SPIDER_MFS,SPIDER_ABC,SPIDER_ICT,SPIDER_MST,SPIDER_DDG,
+               
+               SPIDER_TNH,
+               SPIDER_AMV,SPIDER_JVC,SPIDER_DVN,SPIDER_IMP,SPIDER_DVM,SPIDER_DCL,SPIDER_PBC,SPIDER_DHT,
+                SPIDER_DBD,SPIDER_DHG,SPIDER_DBT,SPIDER_DP3,SPIDER_DDN,SPIDER_DTG
                ]

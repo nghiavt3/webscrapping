@@ -181,7 +181,9 @@ def update_treeview(tree_widget, data):
             tags.append('nodate_row')
         else:
             # Chỉ gán màu theo loại tin nếu không phải là dòng NODATE
-            if "cổ tức" in summary_text: tags.append('co_tuc')
+            if "giải thể" in summary_text or "thu hồi vốn" in summary_text:
+                tags.append('priority_keyword')
+            elif "cổ tức" in summary_text: tags.append('co_tuc')
             elif "chuyển nhượng" in summary_text: tags.append('chuyen_nhuong')
             elif "niêm yết cổ phiếu" in summary_text: tags.append('niem_yet')
             elif "nghị quyết đhđcđ" in summary_text: tags.append('nghi_quyet')
@@ -281,6 +283,8 @@ tree.tag_configure('co_tuc', background='#E1F5FE', foreground='#01579B')
 tree.tag_configure('chuyen_nhuong', background='#FFF3E0', foreground='#E65100')
 tree.tag_configure('niem_yet', background='#E8F5E9', foreground='#2E7D32')
 tree.tag_configure('nghi_quyet', background='#F3E5F5', foreground='#7B1FA2')
+# Thêm dòng này vào khu vực cấu hình tags của Treeview
+tree.tag_configure('priority_keyword', background='#FFF9C4', foreground='#D32F2F', font=('', 9, 'bold'))
 tree.pack(fill='x', pady=5)
 
 # 3. Khu vực điều khiển

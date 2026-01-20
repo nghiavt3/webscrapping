@@ -8,7 +8,8 @@ class EventSpider(scrapy.Spider):
     name = 'event_hmc'
     mcpcty = 'HMC'
     allowed_domains = ['gateway.fpts.com.vn'] 
-    start_urls = ['https://gateway.fpts.com.vn/news/api/gateway/v1/mobile/list?folder=86&code=HMC&pageSize=8&selectedPage=1&cbtt=1&from=01-01-1970&to=01-01-3000&newsType=1'] 
+    start_urls = ['https://gateway.fpts.com.vn/news/api/gateway/v1/mobile/list?folder=86&code=HMC&pageSize=8&selectedPage=1&cbtt=1&from=01-01-1970&to=01-01-3000&newsType=1',
+                  'https://gateway.fpts.com.vn/news/api/gateway/v1/mobile/list?folder=86&code=HMC&pageSize=8&selectedPage=1&cbtt=0&from=01-01-1970&to=01-01-3000&newsType=1'] 
 
     def __init__(self, *args, **kwargs):
         super(EventSpider, self).__init__(*args, **kwargs)

@@ -56,7 +56,7 @@ CONCURRENT_REQUESTS_PER_DOMAIN = 8
 PLAYWRIGHT_CLOSING_TIMEOUT = 10
 # Disable Telnet Console (enabled by default)
 #TELNETCONSOLE_ENABLED = False
-
+HTTPERROR_ALLOWED_CODES=[500]
 # Override the default request headers:
 #DEFAULT_REQUEST_HEADERS = {
 #    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",

@@ -4,8 +4,8 @@ from stock_company_scraper.items import EventItem
 from datetime import datetime
 
 class EventSpider(scrapy.Spider):
-    name = 'event_tdg'
-    mcpcty = 'TDG'
+    name = 'event_mbb'
+    mcpcty = 'MBB'
     allowed_domains = ['thaiduongpetrol.vn'] 
 
     def __init__(self, *args, **kwargs):

@@ -7,7 +7,7 @@ class EventSpider(scrapy.Spider):
     name = 'event_vgi'
     mcpcty = 'VGI'
     allowed_domains = ['viettelglobal.com.vn'] 
-    start_urls = ['https://viettelglobal.com.vn/quan-he-co-dong'] 
+    #start_urls = ['https://viettelglobal.com.vn/quan-he-co-dong'] 
     
     # Cấu hình an toàn để tránh bị block bởi Viettel
     custom_settings = {
@@ -21,11 +21,17 @@ class EventSpider(scrapy.Spider):
         self.db_path = 'stock_events.db'
 
     def start_requests(self):
-        yield scrapy.Request(
-            url=self.start_urls[0],
-            callback=self.parse,
-            meta={'playwright': True}
-        )
+        urls = [
+            ('https://viettelglobal.com.vn/tin-co-dong', self.parse),
+            ('https://viettelglobal.com.vn/dai-hoi-dong-co-dong', self.parse),
+            ('https://viettelglobal.com.vn/bao-cao-tai-chinh', self.parse),
+        ]
+        for url, callback in urls:
+            yield scrapy.Request(
+                url=url,
+                callback=callback,
+                meta={'playwright': True}
+            )
 
     def parse(self, response):
         # 1. Khởi tạo SQLite

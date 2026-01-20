@@ -5,7 +5,7 @@ from datetime import datetime
 import re
 class EventSpider(scrapy.Spider):
     name = 'event_pgi'
-    mcpcty = 'PGI'
+    mcpcty = 'PGI' 
     allowed_domains = ['pjico.com.vn'] 
 
     def __init__(self, *args, **kwargs):

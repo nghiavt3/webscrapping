@@ -14,6 +14,14 @@ class EventSpider(scrapy.Spider):
         super(EventSpider, self).__init__(*args, **kwargs)
         self.db_path = 'stock_events.db'
 
+    def start_requests(self):
+        for url in self.start_urls:
+            yield scrapy.Request(
+                url=url, 
+                callback=self.parse,
+                meta={'playwright': True}
+            )
+
     def parse(self, response):
         # 1. Khởi tạo SQLite
         conn = sqlite3.connect(self.db_path)
@@ -27,11 +35,11 @@ class EventSpider(scrapy.Spider):
         ''')
 
         # 2. Duyệt qua từng wrapper tin bài
-        for post in response.css('div.item-link-wrapper'):
-            title = post.css('[data-hook="post-title"] h2::text').get()
-            url = post.css('a[data-hook="post-list-item__title"]::attr(href)').get()
-            summary_text = post.css('[data-hook="post-description"] div.BOlnTh::text').get()
-            publish_date_raw = post.css('[data-hook="time-ago"]::text').get()
+        for item in response.css('div.border-b'):
+            title = item.css('a.text-black-neutral-2::text').get()
+            url = item.css('a.text-black-neutral-2::attr(href)').get()
+            
+            publish_date_raw =item.css('a.text-muted-foreground span::text').get()
             
             if not title:
                 continue
@@ -58,8 +66,8 @@ class EventSpider(scrapy.Spider):
             e_item['date'] = iso_date
             
             full_url = response.urljoin(url) if url else "N/A"
-            desc = summary_text.strip() if summary_text else ""
-            e_item['details_raw'] = f"{summary}\n{desc}\nLink: {full_url}"
+            
+            e_item['details_raw'] = f"{summary}\nLink: {full_url}"
             e_item['scraped_at'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
             
             yield e_item

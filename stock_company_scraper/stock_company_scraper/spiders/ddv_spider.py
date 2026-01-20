@@ -7,11 +7,27 @@ class EventSpider(scrapy.Spider):
     name = 'event_ddv'
     mcpcty = 'DDV'
     allowed_domains = ['dap-vinachem.com.vn'] 
-    start_urls = ['https://www.dap-vinachem.com.vn/thong-bao-tin-tuc'] 
 
     def __init__(self, *args, **kwargs):
         super(EventSpider, self).__init__(*args, **kwargs)
         self.db_path = 'stock_events.db'
+
+    def start_requests(self):
+        urls = [
+            ('https://www.dap-vinachem.com.vn/thong-bao-tin-tuc', self.parse),
+            ('https://www.dap-vinachem.com.vn/cong-bo-thong-tin', self.parse),
+             ('https://www.dap-vinachem.com.vn/nghi-quyet', self.parse),
+             ('https://www.dap-vinachem.com.vn/bao-cao-thuong-nien/bao-cao-thuong-nien-nam-2024', self.parse),
+             
+            
+        ]
+        for url, callback in urls:
+            yield scrapy.Request(
+                url=url, 
+                callback=callback,
+                #meta={'playwright': True}
+            )
+
 
     def parse(self, response):
         # 1. Kết nối SQLite và chuẩn bị bảng
@@ -19,6 +35,7 @@ class EventSpider(scrapy.Spider):
         cursor = conn.cursor()
         
         table_name = f"{self.name}"
+        #cursor.execute(f'''DROP TABLE IF EXISTS {table_name}''')
         cursor.execute(f'''
             CREATE TABLE IF NOT EXISTS {table_name} (
                 id TEXT PRIMARY KEY,
