@@ -82,7 +82,7 @@ class EventSpider(scrapy.Spider):
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
         table_name = f"{self.name}"
-        cursor.execute(f'''DROP TABLE IF EXISTS {table_name}''')
+        #cursor.execute(f'''DROP TABLE IF EXISTS {table_name}''')
         cursor.execute(f'''
             CREATE TABLE IF NOT EXISTS {table_name} (
                 id TEXT PRIMARY KEY, mcp TEXT, date TEXT, summary TEXT, 

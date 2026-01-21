@@ -8,7 +8,7 @@ import re
 class EventSpider(scrapy.Spider):
     name = 'event_acv'
     allowed_domains = ['acv.vn'] 
-    start_urls = ['https://acv.vn/tin-tuc/thong-bao-co-dong'] 
+    start_urls = ['https://acv.vn/tin-tuc/thong-bao-co-dong','https://acv.vn/tin-tuc/bao-cao-tai-chinh','https://acv.vn/tin-tuc/dai-hoi-dong-co-dong'] 
 
     def __init__(self, *args, **kwargs):
         super(EventSpider, self).__init__(*args, **kwargs)
