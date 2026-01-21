@@ -76,7 +76,7 @@ class SQLiteStoragePipeline:
 
                 # Gửi thông báo Telegram cho tin mới
                 self._send_telegram_notification(item)
-               # self._show_desktop_notification(item)
+                self._show_desktop_notification(item)
             except Exception as e:
                 logging.error(f"Lỗi lưu SQLite: {e}")
 
