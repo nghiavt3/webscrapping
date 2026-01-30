@@ -7,13 +7,15 @@ class EventSpider(scrapy.Spider):
     name = 'event_nvb'
     mcpcty = 'NVB'
     allowed_domains = ['ncb-bank.vn'] 
-    start_urls = ['https://www.ncb-bank.vn/vi/nha-dau-tu'] 
+    start_urls = ['https://www.ncb-bank.vn/vi/nha-dau-tu',
+                  'https://www.ncb-bank.vn/vi/nha-dau-tu/bao-cao-tai-chinh',
+                  'https://www.ncb-bank.vn/vi/nha-dau-tu/nghi-quyet-dhdcd-va-hdqt'] 
 
     def __init__(self, *args, **kwargs):
         super(EventSpider, self).__init__(*args, **kwargs)
         self.db_path = 'stock_events.db'
 
-    def start_requests(self):
+    async def start(self):
         url = self.start_urls[0]
         yield scrapy.Request(
             url,

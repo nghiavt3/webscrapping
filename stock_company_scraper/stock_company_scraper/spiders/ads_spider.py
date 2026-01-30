@@ -22,7 +22,7 @@ class EventSpider(scrapy.Spider):
         # Đường dẫn file db khớp với cấu trúc dự án của bạn
         self.db_path = 'stock_events.db'
 
-    def start_requests(self):
+    async def start(self):
         """Gửi request đến API với header thích hợp."""
         for url in self.start_urls:
             yield scrapy.Request(

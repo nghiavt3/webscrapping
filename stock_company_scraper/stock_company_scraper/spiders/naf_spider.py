@@ -7,17 +7,20 @@ class EventSpider(scrapy.Spider):
     name = 'event_naf'
     mcpcty = 'NAF'
     allowed_domains = ['nafoods.com'] 
-    start_urls = ['https://www.nafoods.com/shareholders-relations/announcement'] 
+    start_urls = ['https://www.nafoods.com/shareholders-relations/announcement',
+                  'https://www.nafoods.com/shareholders-relations/financial-information',
+                  'https://www.nafoods.com/shareholders-relations/shareholders-meetings'] 
 
     def __init__(self, *args, **kwargs):
         super(EventSpider, self).__init__(*args, **kwargs)
         self.db_path = 'stock_events.db'
 
-    def parse(self, response):
+    async def parse(self, response):
         # 1. Kết nối SQLite
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
         table_name = f"{self.name}"
+        #cursor.execute(f'''DROP TABLE IF EXISTS {table_name}''')
         cursor.execute(f'''
             CREATE TABLE IF NOT EXISTS {table_name} (
                 id TEXT PRIMARY KEY, mcp TEXT, date TEXT, summary TEXT, 
@@ -26,7 +29,7 @@ class EventSpider(scrapy.Spider):
         ''')
 
         # 2. Nhắm vào bảng TablePress
-        rows = response.css('table#tablepress-4 tbody tr')
+        rows = response.css('table#tablepress-4 tbody tr , table#tablepress-3 tbody tr , table#tablepress-5 tbody tr ')
         
         for row in rows:
             title_raw = row.css('td.column-1::text').get()
@@ -39,7 +42,7 @@ class EventSpider(scrapy.Spider):
             summary = title_raw.strip()
             
             # Xử lý ngày tháng đặc thù DD/MM/YY
-            iso_date = None
+            iso_date = date_raw
             if date_raw:
                 try:
                     clean_date = date_raw.strip()

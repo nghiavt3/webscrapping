@@ -7,13 +7,14 @@ class EventSpider(scrapy.Spider):
     name = 'event_mml'
     mcpcty = 'MML'
     allowed_domains = ['masanmeatlife.com.vn'] 
-    start_urls = ['https://masanmeatlife.com.vn/quan-he-co-dong/thong-bao-cong-ty/tat-ca'] 
+    start_urls = ['https://masanmeatlife.com.vn/category-shareholder/thong-bao-cong-ty/?lang=vi',
+                'https://masanmeatlife.com.vn/category-shareholder/bao-cao-tai-chinh/?lang=vi'] 
 
     def __init__(self, *args, **kwargs):
         super(EventSpider, self).__init__(*args, **kwargs)
         self.db_path = 'stock_events.db'
 
-    def parse(self, response):
+    async def parse(self, response):
         # 1. Kết nối SQLite
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
@@ -26,11 +27,11 @@ class EventSpider(scrapy.Spider):
         ''')
 
         # 2. Duyệt qua các item tin tức
-        for item in response.css('div.item-flex'):
-            title = item.css('p.report-name::text').get(default='').strip()
-            date_raw = item.css('div.dated p:nth-of-type(1)::text').get()
+        for item in response.css('li.shareholder-item'):
+            title = item.css('.item-shareholder__name span.fs-13::text').get()
+            date_raw = item.css('.item-shareholder__time p:nth-child(1)::text').get()
             # time_raw = item.css('div.dated p:nth-of-type(2)::text').get() # Có thể dùng nếu cần độ chính xác cao hơn
-            download_link = response.urljoin(item.css('div.taixuong a::attr(href)').get())
+            download_link = response.urljoin(item.css('.item-shareholder__see a::attr(href)').get())
 
             if not title:
                 continue

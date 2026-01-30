@@ -7,13 +7,13 @@ class EventSpider(scrapy.Spider):
     name = 'event_hdc'
     mcpcty = 'HDC'
     allowed_domains = ['hodeco.vn'] 
-    start_urls = ['https://hodeco.vn/shareholder/1'] 
+    start_urls = ['https://hodeco.vn/shareholder/1','https://hodeco.vn/shareholder/4','https://hodeco.vn/shareholder/3'] 
 
     def __init__(self, *args, **kwargs):
         super(EventSpider, self).__init__(*args, **kwargs)
         self.db_path = 'stock_events.db'
 
-    def parse(self, response):
+    async def parse(self, response):
         # 1. Kết nối SQLite và chuẩn bị bảng
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()

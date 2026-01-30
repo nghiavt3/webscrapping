@@ -2,25 +2,63 @@ import scrapy
 import sqlite3
 from stock_company_scraper.items import EventItem
 from datetime import datetime
-
+from scrapy_playwright.page import PageMethod
 class EventSpider(scrapy.Spider):
     name = 'event_hdb'
     mcpcty = 'HDB'
     allowed_domains = ['hdbank.com.vn'] 
-    start_urls = ['https://hdbank.com.vn/vi/investor/thong-tin-nha-dau-tu/quan-he-co-dong/cong-bo-thong-tin-thong-tin-khac'] 
+    start_urls = [
+                'https://hdbank.com.vn/vi/investor/thong-tin-nha-dau-tu/quan-he-co-dong/cong-bo-thong-tin-thong-tin-khac',
+                  'https://hdbank.com.vn/vi/investor/thong-tin-nha-dau-tu/dai-hoi-dong-co-dong'
+                   ] 
 
     def __init__(self, *args, **kwargs):
         super(EventSpider, self).__init__(*args, **kwargs)
         self.db_path = 'stock_events.db'
-
-    def start_requests(self):
+    async def start(self):
+        for url in self.start_urls:
+            yield scrapy.Request(
+                url=url,
+                callback=self.parse,
+                meta={
+                    'dont_redirect': True, 'handle_httpstatus_list': [301, 302],
+                "playwright": True,
+                "playwright_context": f"context_{url}", # Tạo context riêng cho mỗi link
+                "playwright_context_kwargs": {
+                    "ignore_https_errors": True,
+                },
+            }
+            )
+        url2 = 'https://hdbank.com.vn/vi/investor/thong-tin-nha-dau-tu/bao-cao-tai-chinh'
         yield scrapy.Request(
-            url=self.start_urls[0],
-            callback=self.parse,
-            meta={'playwright': True}
-        )
+                url=url2,
+                callback=self.parse,
+                meta={
+                    #'dont_redirect': True, 'handle_httpstatus_list': [301, 302],
+                    "playwright": True,
+                    "playwright_context": f"context_{url2}", # Tạo context riêng cho mỗi link
+                    "playwright_context_kwargs": {
+                    "ignore_https_errors": True,
+                    },
+                    "playwright_page_methods": [
+                        # 1. Chờ menu hiển thị
+                        PageMethod("wait_for_selector", ".investor__category-menu"),
+                        
+                        # 2. Click vào thẻ <a> chứa text "Báo cáo tài chính" 
+                        # Chúng ta dùng XPath để tìm đúng thẻ a bao quanh chữ "Báo cáo tài chính"
+                        PageMethod("click", "//a[.//div[contains(text(), 'Báo cáo tài chính')]]"),
+                        
+                        # 3. Chờ trang load nội dung mới (HDBank dùng AJAX khá nhiều)
+                        PageMethod("wait_for_load_state", "networkidle"),
+                        PageMethod("wait_for_timeout", 3000), # Chờ thêm 3s để bảng báo cáo hiện ra
+                    ]
+                
+            }
+            )
     
-    def parse(self, response):
+    async def parse(self, response):
+        with open("debug_page.html", "wb") as f:
+             f.write(response.body)
         # 1. Kết nối SQLite và chuẩn bị bảng
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()

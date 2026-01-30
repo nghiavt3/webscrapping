@@ -11,14 +11,15 @@ class EventSpider(scrapy.Spider):
     # Quét cả 2 trang: Thông báo và Công bố thông tin
     start_urls = [
         'https://hoasengroup.vn/vi/quan-he-co-dong/thong-bao-co-dong/26/',
-        'https://hoasengroup.vn/vi/quan-he-co-dong/cong-bo-thong-tin/25/'
+        'https://hoasengroup.vn/vi/quan-he-co-dong/cong-bo-thong-tin/25/',
+        'https://hoasengroup.vn/vi/quan-he-co-dong/bao-cao-tai-chinh/29/'
     ] 
 
     def __init__(self, *args, **kwargs):
         super(EventSpider, self).__init__(*args, **kwargs)
         self.db_path = 'stock_events.db'
 
-    def parse(self, response):
+    async def parse(self, response):
         # 1. Kết nối SQLite
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()

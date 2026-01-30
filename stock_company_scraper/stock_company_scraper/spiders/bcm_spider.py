@@ -9,7 +9,9 @@ class EventSpider(scrapy.Spider):
     name = 'event_bcm'
     mcpcty = 'BCM'
     allowed_domains = ['becamex.com.vn'] 
-    start_urls = ['https://becamex.com.vn/quan-he-co-dong/cong-bo-thong-tin/'] 
+    start_urls = ['https://becamex.com.vn/quan-he-co-dong/cong-bo-thong-tin/',
+                  'https://becamex.com.vn/quan-he-co-dong/bao-cao-tai-chinh/',
+                  'https://becamex.com.vn/quan-he-co-dong/dai-hoi-dong-co-dong/'] 
 
     def __init__(self, *args, **kwargs):
         super(EventSpider, self).__init__(*args, **kwargs)

@@ -55,10 +55,10 @@ class EventSpider(scrapy.Spider):
             # -------------------------------------------------------
             event_id = f"{summary}_{iso_date}".replace(' ', '_').strip()[:150]
             
-            cursor.execute(f"SELECT id FROM {table_name} WHERE id = ?", (event_id,))
-            if cursor.fetchone():
-                self.logger.info(f"===> GẶP TIN CŨ TẠI {source_name}: [{summary}]. DỪNG.")
-                break 
+            # cursor.execute(f"SELECT id FROM {table_name} WHERE id = ?", (event_id,))
+            # if cursor.fetchone():
+            #     self.logger.info(f"===> GẶP TIN CŨ TẠI {source_name}: [{summary}]. DỪNG.")
+            #     break 
 
             e_item = EventItem()
             e_item['mcp'] = self.mcpcty

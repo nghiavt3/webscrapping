@@ -7,7 +7,9 @@ class EventSpider(scrapy.Spider):
     name = 'event_dgc'
     mcpcty = 'DGC'
     allowed_domains = ['ducgiangchem.vn'] 
-    start_urls = ['https://ducgiangchem.vn/category/quan-he-co-dong/thong-bao/'] 
+    start_urls = ['https://ducgiangchem.vn/category/quan-he-co-dong/thong-bao/',
+                  'https://ducgiangchem.vn/category/quan-he-co-dong/bao-cao-tai-chinh/',
+                  'https://ducgiangchem.vn/category/quan-he-co-dong/dai-hoi-co-dong/'] 
 
     def __init__(self, *args, **kwargs):
         super(EventSpider, self).__init__(*args, **kwargs)

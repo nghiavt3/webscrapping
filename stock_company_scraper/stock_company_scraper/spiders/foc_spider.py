@@ -12,9 +12,11 @@ class EventSpider(scrapy.Spider):
         super(EventSpider, self).__init__(*args, **kwargs)
         self.db_path = 'stock_events.db'
 
-    def start_requests(self):
+    async def start(self):
         urls = [
             ('https://fptonline.net/tin-tuc/thong-bao/8.html', self.parse_generic),
+            ('https://fptonline.net/tin-tuc/bao-cao-tai-chinh/4.html', self.parse_generic),
+            ('https://fptonline.net/tin-tuc/dai-hoi-dong-co-dong/2.html', self.parse_generic),
             
              
             

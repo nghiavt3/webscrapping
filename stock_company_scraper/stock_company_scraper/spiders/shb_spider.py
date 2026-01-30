@@ -2,18 +2,51 @@ import scrapy
 import sqlite3
 from stock_company_scraper.items import EventItem
 from datetime import datetime
-
+from scrapy_playwright.page import PageMethod
 class EventSpider(scrapy.Spider):
     name = 'event_shb'
     mcpcty = 'SHB'
     allowed_domains = ['shb.com.vn'] 
-    start_urls = ['https://www.shb.com.vn/category/nha-dau-tu/cong-bo-thong-tin/'] 
+    start_urls = [
+                    'https://www.shb.com.vn/category/nha-dau-tu/cong-bo-thong-tin/',
+                  'https://www.shb.com.vn/category/nha-dau-tu/bao-cao-tai-chinh/'
+                  ] 
+    custom_settings = {
+        'PLAYWRIGHT_LAUNCH_OPTIONS': {
+            'headless': False, # Nên để False để Cloudflare ít nghi ngờ hơn
+            'args': ["--disable-blink-features=AutomationControlled"]
+        },
+        'CONCURRENT_REQUESTS': 1,
+        'DOWNLOAD_DELAY': 5,
+    }
+    def start_requests(self):
+        urls = [
+            'https://www.shb.com.vn/category/nha-dau-tu/cong-bo-thong-tin/',
+            'https://www.shb.com.vn/category/nha-dau-tu/bao-cao-tai-chinh/'
+        ]
+        for idx, url in enumerate(urls):
+            yield scrapy.Request(
+                url,
+                meta={
+                    "playwright": True,
+                    "playwright_include_page": True,
+                    "playwright_context": f"shb_session_{idx}", # Tách biệt session hoàn toàn
+                    "playwright_page_methods": [
+                        # Chờ cho đến khi Cloudflare xử lý xong hoàn toàn
+                        PageMethod("wait_until", "networkidle"),
+                        PageMethod("wait_for_timeout", 3000), 
+                    ],
+                },
+                callback=self.parse,
+                headers={'Referer': None}, # Xóa referer để tránh Cloudflare track
+                dont_filter=True
+            )
 
     def __init__(self, *args, **kwargs):
         super(EventSpider, self).__init__(*args, **kwargs)
         self.db_path = 'stock_events.db'
 
-    def parse(self, response):
+    async def parse(self, response):
         # 1. Khởi tạo kết nối SQLite
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
@@ -67,6 +100,24 @@ class EventSpider(scrapy.Spider):
             yield e_item
 
         conn.close()
+        # # Sau khi xử lý xong URL 1, mới gọi URL 2 (nếu còn trong list)
+        # current_index = self.start_urls.index(response.url)
+        # if current_index + 1 < len(self.start_urls):
+        #     next_url = self.start_urls[current_index + 1]
+        #     # Nghỉ 5 giây trước khi sang trang mới (giống người dùng click)
+        #     import time
+        #     time.sleep(5) 
+            
+        #     yield scrapy.Request(
+        #         next_url,
+        #         meta={
+        #             "playwright": True,
+        #             "playwright_include_page": True,
+        #             "playwright_context": f"context_{current_index + 1}",
+        #         },
+        #         callback=self.parse,
+        #         dont_filter=True
+        #     )
 
 def convert_date_to_iso8601(vietnam_date_str):
     if not vietnam_date_str:

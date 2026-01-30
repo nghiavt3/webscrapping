@@ -12,7 +12,7 @@ class EventSpider(scrapy.Spider):
         super(EventSpider, self).__init__(*args, **kwargs)
         self.db_path = 'stock_events.db'
 
-    def start_requests(self):
+    async def start(self):
         urls = [
             ('https://ytevietnhat.com.vn/danh-muc-tin/thong-bao-co-dong-33', self.parse_generic),
             ('https://ytevietnhat.com.vn/danh-muc-tin/dai-hoi-dong-co-dong-35', self.parse_dhcd),
@@ -26,7 +26,7 @@ class EventSpider(scrapy.Spider):
                 #meta={'playwright': True}
             )
 
-    def parse_generic(self, response):
+    async def parse_generic(self, response):
         """Hàm parse dùng chung cho các chuyên mục của SeABank"""
         # 1. Khởi tạo SQLite
         conn = sqlite3.connect(self.db_path)
@@ -76,7 +76,7 @@ class EventSpider(scrapy.Spider):
 
         conn.close()
 
-    def parse_dhcd(self, response):
+    async def parse_dhcd(self, response):
         """Hàm parse dùng chung cho các chuyên mục của SeABank"""
         # 1. Khởi tạo SQLite
         conn = sqlite3.connect(self.db_path)

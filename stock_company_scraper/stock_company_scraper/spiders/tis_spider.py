@@ -7,8 +7,19 @@ class EventSpider(scrapy.Spider):
     name = 'event_tis'
     mcpcty = 'TIS'
     allowed_domains = ['tisco.com.vn'] 
-    start_urls = ['https://tisco.com.vn/quan-he-co-dong/thong-bao.html'] 
+    
 
+    async def start(self):
+        urls = [
+                  ('https://tisco.com.vn/quan-he-co-dong/thong-bao.html', self.parse),
+                  ('https://tisco.com.vn/quan-he-co-dong/bao-cao-tai-chinh.html',self.parse_bctc)
+                  ] 
+        """Gửi request đến API với header mô phỏng trình duyệt."""
+        for url, callback in urls:
+            yield scrapy.Request(
+                url=url,
+                callback=callback,
+            )
     def __init__(self, *args, **kwargs):
         super(EventSpider, self).__init__(*args, **kwargs)
         self.db_path = 'stock_events.db'
@@ -54,6 +65,31 @@ class EventSpider(scrapy.Spider):
 
         conn.close()
 
+    def parse_bctc(self, response):
+        # 1. Khởi tạo SQLite
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        table_name = f"{self.name}"
+        cursor.execute(f'''
+            CREATE TABLE IF NOT EXISTS {table_name} (
+                id TEXT PRIMARY KEY, mcp TEXT, date TEXT, summary TEXT, 
+                scraped_at TEXT, web_source TEXT, details_clean TEXT
+            )
+        ''')
+
+        # 2. Xử lý tin nổi bật (First News)
+        reports = response.css('div.view-content ul.products-grid li.product')
+        for report in reports:
+            title = report.css('h3.title-node a::text').get()
+            link = response.urljoin(report.css('h3.title-node a::attr(href)').get())
+            date = None
+        
+            yield from self.process_item(cursor, table_name, title, date, link)
+
+        
+
+        conn.close()
+    
     def process_item(self, cursor, table_name, title, clean_date, url):
         """Hỗ trợ kiểm tra trùng lặp và đóng gói Item"""
         summary = title.strip()
@@ -62,7 +98,7 @@ class EventSpider(scrapy.Spider):
         # -------------------------------------------------------
         # 4. KIỂM TRA ĐIỂM DỪNG (INCREMENTAL LOGIC)
         # -------------------------------------------------------
-        event_id = f"{summary}_{iso_date}".replace(' ', '_').strip()[:150]
+        event_id = f"{summary}_{iso_date if iso_date else 'NODATE'}".replace(' ', '_').strip()[:150]
         
         cursor.execute(f"SELECT id FROM {table_name} WHERE id = ?", (event_id,))
         if cursor.fetchone():

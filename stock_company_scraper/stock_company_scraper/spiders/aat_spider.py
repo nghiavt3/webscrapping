@@ -9,7 +9,7 @@ class EventSpider(scrapy.Spider):
     name = 'event_aat'
     mcpcty = 'AAT'
     allowed_domains = ['tiensonaus.com'] 
-    start_urls = ['https://tiensonaus.com/quan-he-co-dong/cong-bo-thong-tin/'] 
+    start_urls = ['https://tiensonaus.com/quan-he-co-dong/cong-bo-thong-tin/','https://tiensonaus.com/quan-he-co-dong/bao-cao-tai-chinh/','https://tiensonaus.com/quan-he-co-dong/nghi-quyet/','https://tiensonaus.com/quan-he-co-dong/tai-lieu-hop-dai-hoi-dong-co-dong/'] 
 
     def __init__(self, *args, **kwargs):
         super(EventSpider, self).__init__(*args, **kwargs)

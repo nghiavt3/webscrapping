@@ -28,7 +28,7 @@ class EventSpider(scrapy.Spider):
         except ValueError:
             return None
 
-    def parse(self, response):
+    async def parse(self, response):
         # 1. Khởi tạo SQLite
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()

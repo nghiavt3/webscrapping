@@ -7,13 +7,15 @@ class EventSpider(scrapy.Spider):
     name = 'event_pac'
     mcpcty = 'PAC'
     allowed_domains = ['pinaco.com'] 
-    start_urls = ['https://www.pinaco.com/co-dong/thong-tin-khac-68.html'] 
+    start_urls = ['https://www.pinaco.com/co-dong/thong-tin-khac-68.html',
+                  'https://www.pinaco.com/co-dong/bao-cao-tai-chinh-66.html',
+                  'https://www.pinaco.com/co-dong/dai-hoi-co-dong-64.html'] 
 
     def __init__(self, *args, **kwargs):
         super(EventSpider, self).__init__(*args, **kwargs)
         self.db_path = 'stock_events.db'
 
-    def parse(self, response):
+    async def parse(self, response):
         # 1. Khởi tạo SQLite
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()

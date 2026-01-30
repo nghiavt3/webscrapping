@@ -116,6 +116,34 @@ def get_filtered_data(days_offset=None):
     # Sắp xếp theo ngày (cột index 2) giảm dần
     return sorted(all_data, key=lambda x: x[2], reverse=True)
 
+def get_newly_scraped_data():
+    today_str = date.today().strftime('%Y-%m-%d')
+    all_data = []
+    if not os.path.exists(DATABASE_NAME): return []
+    
+    conn = sqlite3.connect(DATABASE_NAME)
+    cursor = conn.cursor()
+    try:
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name LIKE 'event_%'")
+        tables = [row[0] for row in cursor.fetchall()]
+        
+        for table in tables:
+            # Lọc trực tiếp bằng SQL theo cột scraped_at
+            query = f"SELECT id, mcp, date, summary, scraped_at, web_source, details_clean FROM {table} WHERE scraped_at LIKE ?"
+            cursor.execute(query, (f"{today_str}%",))
+            rows = cursor.fetchall()
+            
+            for row in rows:
+                new_row = list(row)
+                if not new_row[2] or new_row[2] == "None":
+                    new_row[2] = row[4].split(' ')[0]
+                all_data.append(tuple(new_row))
+    finally:
+        conn.close()
+    
+    # Sắp xếp theo thời gian Scrape mới nhất lên đầu (cột index 4)
+    return sorted(all_data, key=lambda x: x[4], reverse=True)
+
 def perform_search():
     query = search_var.get().strip().upper()
     if not query:
@@ -171,12 +199,16 @@ def auto_refresh():
 # --- 4. GIAO DIỆN GUI ---
 
 def update_treeview(tree_widget, data):
+    today_str = date.today().strftime('%Y-%m-%d')
     for item in tree_widget.get_children(): tree_widget.delete(item)
     for row in data:
         # 1. Định nghĩa row_id từ cột đầu tiên (index 0) của row
         row_id = str(row[0]) if row[0] else ""
         summary_text = str(row[3]).lower()
+        scraped_at = str(row[4])
         tags = []
+        if scraped_at.startswith(today_str):
+            tags.append('new_scraped')
         if "NODATE" in row_id:
             tags.append('nodate_row')
         else:
@@ -193,16 +225,23 @@ def update_treeview(tree_widget, data):
 
 def update_display(mode="today"):
     global current_view_data, last_count
-    days = 1 if mode == "today" else 7
-    current_view_data = get_filtered_data(days_offset=days)
     
-    # Đồng bộ số lượng tin để auto_refresh so sánh chính xác
-    if days == 1:
+    if mode == "newly":
+        current_view_data = get_newly_scraped_data()
+        title_prefix = "Mới cập nhật hôm nay"
+    else:
+        days = 1 if mode == "today" else 7
+        current_view_data = get_filtered_data(days_offset=days)
+        title_prefix = 'Hôm nay' if days==1 else '7 ngày qua'
+
+    # Đồng bộ số lượng để báo âm thanh
+    if mode == "newly" or mode == "today":
         last_count = len(current_view_data)
         
     update_treeview(tree, current_view_data)
     search_var.set("")
-    root.title(f"Stock Scraper - {'Hôm nay' if days==1 else '7 ngày qua'} ({len(current_view_data)})")
+    root.title(f"Stock Scraper - {title_prefix} ({len(current_view_data)})")
+
 
 def on_item_select(event):
     selected = tree.focus()
@@ -264,6 +303,7 @@ ttk.Button(top_frame, text="Tìm", command=perform_search).pack(side='left', pad
 
 ttk.Separator(top_frame, orient='vertical').pack(side='left', fill='y', padx=10)
 ttk.Button(top_frame, text="📅 Hôm nay", command=lambda: update_display("today")).pack(side='left', padx=2)
+ttk.Button(top_frame, text="⚡ Mới cập nhật", command=lambda: update_display("newly")).pack(side='left', padx=2)
 ttk.Button(top_frame, text="🗓️ 7 Ngày qua", command=lambda: update_display("week")).pack(side='left', padx=2)
 
 ttk.Label(top_frame, text=" | Tìm mã nguồn:").pack(side='left', padx=5)
@@ -278,6 +318,7 @@ for c in tree['columns']:
     tree.heading(c, text=c, anchor='w')
     tree.column(c, width=100)
 tree.column('Tóm tắt', width=450)
+tree.tag_configure('new_scraped', background='#E8F5E9')
 tree.tag_configure('nodate_row', background='#F5F5F5', foreground='#9E9E9E') # Màu xám nhạt
 tree.tag_configure('co_tuc', background='#E1F5FE', foreground='#01579B')
 tree.tag_configure('chuyen_nhuong', background='#FFF3E0', foreground='#E65100')

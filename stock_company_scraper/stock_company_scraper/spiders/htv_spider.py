@@ -12,7 +12,7 @@ class EventSpider(scrapy.Spider):
         super(EventSpider, self).__init__(*args, **kwargs)
         self.db_path = 'stock_events.db'
 
-    def start_requests(self):
+    async def start(self):
         urls = [
             ('https://vitrichem.vn/quan-he-co-dong/cong-bo-thong-tin/', self.parse_generic),
             ('https://vitrichem.vn/quan-he-co-dong/bao-cao-tai-chinh/', self.parse_generic),
@@ -27,7 +27,7 @@ class EventSpider(scrapy.Spider):
                 #meta={'playwright': True}
             )
 
-    def parse_generic(self, response):
+    async def parse_generic(self, response):
         """Hàm parse dùng chung cho các chuyên mục của SeABank"""
         # 1. Khởi tạo SQLite
         conn = sqlite3.connect(self.db_path)
@@ -66,10 +66,10 @@ class EventSpider(scrapy.Spider):
             # -------------------------------------------------------
             event_id = f"{summary}_{iso_date if iso_date else 'NODATE'}".replace(' ', '_').strip()[:150]
             
-            cursor.execute(f"SELECT id FROM {table_name} WHERE id = ?", (event_id,))
-            if cursor.fetchone():
-                self.logger.info(f"===> GẶP TIN CŨ: [{summary}]. DỪNG QUÉT CHUYÊN MỤC.")
-                break 
+            # cursor.execute(f"SELECT id FROM {table_name} WHERE id = ?", (event_id,))
+            # if cursor.fetchone():
+            #     self.logger.info(f"===> GẶP TIN CŨ: [{summary}]. DỪNG QUÉT CHUYÊN MỤC.")
+            #     break 
 
             # 4. Yield Item
             e_item = EventItem()

@@ -9,7 +9,7 @@ class EventSpider(scrapy.Spider):
     allowed_domains = ['haiphongport.com.vn'] 
 
 
-    def start_requests(self):
+    async def start(self):
         urls = [
             ('https://haiphongport.com.vn/vi/thong-tin-co-dong', self.parse),
             ('https://haiphongport.com.vn/vi/bao-cao-tai-chinh', self.parse_bctc),
@@ -28,7 +28,7 @@ class EventSpider(scrapy.Spider):
         super(EventSpider, self).__init__(*args, **kwargs)
         self.db_path = 'stock_events.db'
 
-    def parse(self, response):
+    async def parse(self, response):
         # 1. Kết nối và khởi tạo SQLite
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()

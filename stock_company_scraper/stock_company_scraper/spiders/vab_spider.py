@@ -15,6 +15,8 @@ class EventSpider(scrapy.Spider):
     def start_requests(self):
         urls = [
             ('https://vietabank.com.vn/nha-dau-tu/thong-bao-thong-tin.html', self.parse_generic),
+             ('https://vietabank.com.vn/nha-dau-tu/bao-cao-tai-chinh.html', self.parse_generic),
+             ('https://vietabank.com.vn/nha-dau-tu/dai-hoi-co-dong.html', self.parse_generic),
         ]
         for url, callback in urls:
             yield scrapy.Request(

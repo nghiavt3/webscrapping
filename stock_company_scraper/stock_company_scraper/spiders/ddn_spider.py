@@ -12,7 +12,7 @@ class EventSpider(scrapy.Spider):
         super(EventSpider, self).__init__(*args, **kwargs)
         self.db_path = 'stock_events.db'
 
-    def start_requests(self):
+    async def start(self):
         urls = [
             ('https://dapharco.com.vn/thong-tin-co-dong', self.parse_generic),
             ('https://dapharco.com.vn/dai-hoi-co-dong', self.parse_generic),

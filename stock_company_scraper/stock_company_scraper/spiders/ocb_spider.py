@@ -2,22 +2,26 @@ import scrapy
 import sqlite3
 from stock_company_scraper.items import EventItem
 from datetime import datetime
-
+import json
+import re
 class EventSpider(scrapy.Spider):
     name = 'event_ocb'
     mcpcty = 'OCB'
     allowed_domains = ['ocb.com.vn'] 
-    start_urls = ['https://ocb.com.vn/vi/nha-dau-tu'] 
+    start_urls = ['https://ocb.com.vn/vi/nha-dau-tu/cong-bo-thong-tin'] 
 
     def __init__(self, *args, **kwargs):
         super(EventSpider, self).__init__(*args, **kwargs)
         self.db_path = 'stock_events.db'
 
-    def parse(self, response):
+    async def parse(self, response):
+        with open("debug_page.html", "wb") as f:
+            f.write(response.body)
         # 1. Kết nối SQLite
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
         table_name = f"{self.name}"
+       # cursor.execute(f'''DROP TABLE IF EXISTS {table_name}''')
         cursor.execute(f'''
             CREATE TABLE IF NOT EXISTS {table_name} (
                 id TEXT PRIMARY KEY, mcp TEXT, date TEXT, summary TEXT, 
@@ -25,48 +29,57 @@ class EventSpider(scrapy.Spider):
             )
         ''')
 
-        # 2. Duyệt qua từng nhóm danh mục tin tức
-        groups = response.css('div.content__item')
+        # 1. Tìm thẻ script chứa dữ liệu ngầm (Transfer State)
+        # Thông thường ID là 'server-app-state'
+        script_data = response.css('script#serverApp-state::text').get()
 
-        for group in groups:
-            # Lặp qua từng bản tin trong danh mục đó
-            news_items = group.css('.content__info-item')
+        if not script_data:
+            self.logger.error("Không tìm thấy thẻ script dữ liệu!")
+            return
+
+        # 2. Parse chuỗi JSON
+        try:
+            # Lưu ý: Một số ký tự đặc biệt có thể bị escape trong HTML (ví dụ &qout;)
+            # Scrapy tự động handle hầu hết các trường hợp này
+            data = json.loads(script_data)
             
-            for item in news_items:
-                title = item.css('a::text').get()
-                link = item.css('a::attr(href)').get()
-                raw_date = item.css('.published-date::text').get()
-                
-                if not title:
-                    continue
 
-                summary = title.strip()
-                # Làm sạch ngày (loại bỏ "Ngày đăng: ")
-                clean_date_str = raw_date.replace('Ngày đăng:', '').strip() if raw_date else None
-                iso_date = convert_date_to_iso8601(clean_date_str)
-                full_url = response.urljoin(link)
+            # Truy cập thẳng vào key ID
+            target_ids = ['815871077' ,#thongtintaichinh
+                         '1242064574',#daihoicodong
+                         '2372755190',#baocaothuongnien
+                         '2999441261'#congbothongtin
+                         ]
+    
+            for target_id in target_ids:
+                if target_id in data:
+                    body_content = data[target_id].get('body', [])
+                    for item in body_content:
+                        title= item.get('name')
+                        link= f"https://webocb-api.ocb.com.vn/Resources/Files/{item.get('fileMedia')}"
+                        date= item.get('publishDate')
+                        
+                        summary = title
+                        # Làm sạch ngày (loại bỏ "Ngày đăng: ")
+                        clean_date_str = date[:10]
+                        iso_date = clean_date_str
+                        full_url = link
 
-                # -------------------------------------------------------
-                # 3. KIỂM TRA ĐIỂM DỪNG (INCREMENTAL LOGIC)
-                # -------------------------------------------------------
-                event_id = f"{summary}_{iso_date}".replace(' ', '_').strip()[:150]
-                
-                cursor.execute(f"SELECT id FROM {table_name} WHERE id = ?", (event_id,))
-                if cursor.fetchone():
-                    self.logger.info(f"===> GẶP TIN CŨ: [{summary}]. DỪNG QUÉT.")
-                    # Vì các tin được sắp xếp theo thời gian, gặp tin cũ ta có thể dừng group này
-                    continue 
+                    # 4. Yield Item
+                        e_item = EventItem()
+                        e_item['mcp'] = self.mcpcty
+                        e_item['web_source'] = self.allowed_domains[0]
+                        e_item['summary'] = summary
+                        e_item['date'] = iso_date
+                        e_item['details_raw'] = f"{summary}\nLink: {full_url}"
+                        e_item['scraped_at'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                        
+                        yield e_item
 
-                # 4. Yield Item
-                e_item = EventItem()
-                e_item['mcp'] = self.mcpcty
-                e_item['web_source'] = self.allowed_domains[0]
-                e_item['summary'] = summary
-                e_item['date'] = iso_date
-                e_item['details_raw'] = f"{summary}\nLink: {full_url}"
-                e_item['scraped_at'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        except Exception as e:
+            self.logger.error(f"Lỗi khi xử lý JSON: {e}")
+
                 
-                yield e_item
 
         conn.close()
 

@@ -7,13 +7,15 @@ class EventSpider(scrapy.Spider):
     name = 'event_lcg'
     mcpcty = 'LCG'
     allowed_domains = ['lizen.vn'] 
-    start_urls = ['https://lizen.vn/vi/document-category/thong-bao-co-dong?page=1'] 
+    start_urls = ['https://lizen.vn/vi/document-category/thong-bao-co-dong?page=1',
+                  'https://lizen.vn/vi/document-category/bao-cao-tai-chinh',
+                  'https://lizen.vn/vi/document-category/dai-hoi-dong-co-dong'] 
 
     def __init__(self, *args, **kwargs):
         super(EventSpider, self).__init__(*args, **kwargs)
         self.db_path = 'stock_events.db'
 
-    def parse(self, response):
+    async def parse(self, response):
         # 1. Kết nối SQLite
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()

@@ -2,18 +2,23 @@ import scrapy
 import sqlite3
 from stock_company_scraper.items import EventItem
 from datetime import datetime
-
+from scrapy_playwright.page import PageMethod
 class EventSpider(scrapy.Spider):
     name = 'event_idc'
     mcpcty = 'IDC'
     allowed_domains = ['admin.idico.com.vn'] 
-    start_urls = ['https://admin.idico.com.vn/api/tai-lieus?populate=files.media&filters[category][$eq]=C%C3%B4ng%20b%E1%BB%91%20th%C3%B4ng%20tin&filters[files][title][$containsi]=&locale=vi'] 
+    start_urls = [
+        'https://admin.idico.com.vn/api/tai-lieus?populate=files.media&filters[category][$eq]=C%C3%B4ng%20b%E1%BB%91%20th%C3%B4ng%20tin&filters[files][title][$containsi]=&locale=vi',
+        #'https://admin.idico.com.vn/api/tai-lieus?populate=files.media&filters[category][$eq]=C%C3%B4ng%20b%E1%BB%91%20th%C3%B4ng%20tin&filters[files][title][$containsi]=&locale=vi'
+        ] 
 
+    
     def __init__(self, *args, **kwargs):
         super(EventSpider, self).__init__(*args, **kwargs)
         self.db_path = 'stock_events.db'
 
-    def start_requests(self):
+    async def start(self):
+        
         for url in self.start_urls:
             yield scrapy.Request(
                 url=url,
@@ -24,7 +29,8 @@ class EventSpider(scrapy.Spider):
                 }
             )
 
-    def parse(self, response):
+
+    async def parse(self, response):
         # 1. Kết nối SQLite
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
@@ -48,29 +54,40 @@ class EventSpider(scrapy.Spider):
             files = attributes.get('files', [])
             
             for file in files:
+                
                 title = file.get('title', '').strip()
                 date_raw = file.get('override_date')
                 # Truy cập sâu vào cấu trúc Strapi để lấy URL file
-                media_attr = file.get('media', {}).get('data', {}).get('attributes', {})
-                pdf_path = media_attr.get('url')
+                # 2. Truy cập vào media -> data -> attributes một cách an toàn
+                media = file.get('media', {})
+                if media is None: media = {} # Phòng trường hợp media: null
+                
+                media_data = media.get('data', {})
+                if media_data is None: media_data = {} # Phòng trường hợp data: null
+                
+                attributes = media_data.get('attributes', {})
+                
+                # 3. Lấy URL
+                file_url = attributes.get('url')
+                pdf_path = 'https://admin.idico.com.vn'+file_url if file_url else None
                 
                 if not title:
                     continue
 
                 iso_date = convert_date_to_iso8601(date_raw)
-                full_pdf_url = f"https://admin.idico.com.vn{pdf_path}" if pdf_path else ""
+                full_pdf_url = pdf_path
 
                 # -------------------------------------------------------
                 # 3. KIỂM TRA ĐIỂM DỪNG (INCREMENTAL LOGIC)
                 # -------------------------------------------------------
-                event_id = f"{title}_{iso_date}".replace(' ', '_').strip()[:150]
+                # event_id = f"{title}_{iso_date}".replace(' ', '_').strip()[:150]
                 
-                cursor.execute(f"SELECT id FROM {table_name} WHERE id = ?", (event_id,))
-                if cursor.fetchone():
-                    self.logger.info(f"===> GẶP TIN CŨ: [{title}]. DỪNG QUÉT.")
-                    # Vì Strapi API trả về list, tin cũ có thể nằm xen kẽ hoặc theo thứ tự, 
-                    # ở đây ta dùng continue thay vì break nếu danh sách không đảm bảo thứ tự thời gian tuyệt đối
-                    continue 
+                # cursor.execute(f"SELECT id FROM {table_name} WHERE id = ?", (event_id,))
+                # if cursor.fetchone():
+                #     self.logger.info(f"===> GẶP TIN CŨ: [{title}]. DỪNG QUÉT.")
+                #     # Vì Strapi API trả về list, tin cũ có thể nằm xen kẽ hoặc theo thứ tự, 
+                #     # ở đây ta dùng continue thay vì break nếu danh sách không đảm bảo thứ tự thời gian tuyệt đối
+                #     continue 
 
                 # 4. Yield Item
                 e_item = EventItem()
@@ -85,11 +102,24 @@ class EventSpider(scrapy.Spider):
 
         conn.close()
 
+
 def convert_date_to_iso8601(vietnam_date_str):
     if not vietnam_date_str:
         return None
     # Xử lý định dạng ISO từ Strapi: "2025-12-31T07:08:46"
     input_format = '%Y-%m-%dT%H:%M:%S'
+    output_format = '%Y-%m-%d'
+    try:
+        clean_date = vietnam_date_str.split('.')[0]
+        date_object = datetime.strptime(clean_date, input_format)
+        return date_object.strftime(output_format)
+    except Exception:
+        return None
+def convert_date_to_iso8601_2(vietnam_date_str):
+    if not vietnam_date_str:
+        return None
+    # Xử lý định dạng ISO từ Strapi: "2025-12-31T07:08:46"
+    input_format = '%d/%m/%Y'
     output_format = '%Y-%m-%d'
     try:
         clean_date = vietnam_date_str.split('.')[0]

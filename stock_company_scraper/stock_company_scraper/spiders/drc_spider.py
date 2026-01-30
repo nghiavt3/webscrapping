@@ -13,7 +13,7 @@ class EventSpider(scrapy.Spider):
         super(EventSpider, self).__init__(*args, **kwargs)
         self.db_path = 'stock_events.db'
 
-    def start_requests(self):
+    async def start(self):
         # Danh sách các năm bạn muốn lấy dữ liệu
         years = ['2023', '2024', '2025', '2026']
         

@@ -26,6 +26,7 @@ class EventSpider(scrapy.Spider):
             )
         ''')
 
+
         # 2. Nhắm mục tiêu vào tab "Công bố thông tin bất thường"
         container = response.css('#pills-unusual .filter-section-content')
 
@@ -72,6 +73,140 @@ class EventSpider(scrapy.Spider):
                 
                 yield e_item
 
+        # 2. Nhắm mục tiêu vào tab "Kết quả kinh doanh"
+        rows = response.css('#pills-kqkd div.table-data-filter-kqkd table tbody tr')
+        # Lấy danh sách tiêu đề quý từ header (Quý 1, Quý 2...)
+        quarters = response.css('#pills-kqkd div.table-data-filter-kqkd table thead th.fw-semibold::text').getall()
+        for row in rows:
+            # Kiểm tra nếu hàng này là hàng tiêu đề phụ (có class bg-primary) thì bỏ qua hoặc xử lý riêng
+            if row.css('td.bg-primary'):
+                section_name = row.css('td::text').get().strip()
+                self.logger.info(f"Đang xử lý mục: {section_name}")
+                continue
+
+            # Trích xuất tên loại báo cáo
+            report_name = row.css('td[scope="row"]::text').get()
+            if not report_name:
+                continue
+            
+            report_name = report_name.strip()
+
+            # Lấy tất cả các cột dữ liệu (4 cột tương ứng 4 quý)
+            cells = row.css('td')[1:] # Bỏ qua cột đầu tiên chứa tên báo cáo
+            data = {
+                'loai_bao_cao': report_name,
+                'chi_tiet': []
+            }
+            for index, cell in enumerate(cells):
+                # Mỗi cell có thể có link và ngày tháng
+                pdf_link = cell.css('a::attr(href)').get()
+                publish_date = cell.css('span::text').get()
+
+                # Chỉ lấy dữ liệu nếu có link thực tế (tránh các link '#' trống)
+                if pdf_link and pdf_link != "#":
+                    cleaned_title = f"Quý {quarters[index] if index < len(quarters) else f"Q{index+1}"}-{report_name}"
+                    iso_date = convert_date_to_iso8601(publish_date.strip())
+                    final_link = response.urljoin(pdf_link)
+
+                    # -------------------------------------------------------
+                    # 3. KIỂM TRA ĐIỂM DỪNG (INCREMENTAL LOGIC)
+                    # -------------------------------------------------------
+                    event_id = f"{cleaned_title}_{iso_date}".replace(' ', '_').strip()[:150]
+                    
+                    cursor.execute(f"SELECT id FROM {table_name} WHERE id = ?", (event_id,))
+                    if cursor.fetchone():
+                        # Đất Xanh sắp xếp theo năm, nên nếu gặp tin cũ trong khối năm hiện tại thì có thể dừng
+                        self.logger.info(f"===> GẶP TIN CŨ: [{cleaned_title}]. DỪNG QUÉT.")
+                        break 
+
+                    # 4. Yield Item
+                    e_item = EventItem()
+                    e_item['mcp'] = self.mcpcty
+                    e_item['web_source'] = self.allowed_domains[0]
+                    e_item['summary'] = cleaned_title
+                    e_item['date'] = iso_date
+                    e_item['details_raw'] = f"{cleaned_title}\nLink tài liệu: {final_link}"
+                    e_item['scraped_at'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                    
+                    yield e_item
+
+
+        # 2. Nhắm mục tiêu vào tab "Công bố thông tin bất thường"
+        # báo cáo thường niên
+        first_table_rows = response.css('div#pills-periodic table:first-of-type tbody tr')
+        for row in first_table_rows:
+            title = row.css('th a::text').get().strip()            
+            date_published = row.css('td:nth-child(3)::text').get().strip()
+            download_url = row.css('td:nth-child(4) a::attr(href)').get()
+            
+            if not title:
+                continue
+
+            cleaned_title = title.strip()
+            iso_date = convert_date_to_iso8601(date_published.strip())
+            
+            # Ưu tiên lấy download_url (PDF trực tiếp) nếu có
+            final_link = response.urljoin(download_url if download_url else detail_url)
+
+            # -------------------------------------------------------
+            # 3. KIỂM TRA ĐIỂM DỪNG (INCREMENTAL LOGIC)
+            # -------------------------------------------------------
+            event_id = f"{cleaned_title}_{iso_date}".replace(' ', '_').strip()[:150]
+            
+            cursor.execute(f"SELECT id FROM {table_name} WHERE id = ?", (event_id,))
+            if cursor.fetchone():
+                # Đất Xanh sắp xếp theo năm, nên nếu gặp tin cũ trong khối năm hiện tại thì có thể dừng
+                self.logger.info(f"===> GẶP TIN CŨ: [{cleaned_title}]. DỪNG QUÉT.")
+                break 
+
+            # 4. Yield Item
+            e_item = EventItem()
+            e_item['mcp'] = self.mcpcty
+            e_item['web_source'] = self.allowed_domains[0]
+            e_item['summary'] = cleaned_title
+            e_item['date'] = iso_date
+            e_item['details_raw'] = f"{cleaned_title}\nLink tài liệu: {final_link}"
+            e_item['scraped_at'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                
+            yield e_item
+
+        #đại hội cổ đông
+        second_table_rows = response.css('div#pills-periodic div[name="wrap-filter-table-dhcd"] tbody tr')
+        for row in second_table_rows:
+            title = row.css('th a::text').get()           
+            date_published = row.css('td.text-muted::text').get()
+            download_url = row.css('td a::attr(href)').get()
+            
+            if not title:
+                continue
+
+            cleaned_title = title.strip()
+            iso_date = convert_date_to_iso8601(date_published.strip())
+            
+            # Ưu tiên lấy download_url (PDF trực tiếp) nếu có
+            final_link = response.urljoin(download_url)
+
+            # -------------------------------------------------------
+            # 3. KIỂM TRA ĐIỂM DỪNG (INCREMENTAL LOGIC)
+            # -------------------------------------------------------
+            event_id = f"{cleaned_title}_{iso_date}".replace(' ', '_').strip()[:150]
+            
+            cursor.execute(f"SELECT id FROM {table_name} WHERE id = ?", (event_id,))
+            if cursor.fetchone():
+                # Đất Xanh sắp xếp theo năm, nên nếu gặp tin cũ trong khối năm hiện tại thì có thể dừng
+                self.logger.info(f"===> GẶP TIN CŨ: [{cleaned_title}]. DỪNG QUÉT.")
+                break 
+
+            # 4. Yield Item
+            e_item = EventItem()
+            e_item['mcp'] = self.mcpcty
+            e_item['web_source'] = self.allowed_domains[0]
+            e_item['summary'] = cleaned_title
+            e_item['date'] = iso_date
+            e_item['details_raw'] = f"{cleaned_title}\nLink tài liệu: {final_link}"
+            e_item['scraped_at'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                
+            yield e_item    
         conn.close()
 
 def convert_date_to_iso8601(vietnam_date_str):

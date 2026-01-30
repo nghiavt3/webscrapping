@@ -7,11 +7,17 @@ class EventSpider(scrapy.Spider):
     name = 'event_fox'
     mcpcty = 'FOX'
     allowed_domains = ['fpt.vn'] 
-    
+    year= datetime.now().year
     # Quét cả Thông báo khác và Thông báo trả cổ tức
     start_urls = [
-        'https://fpt.vn/vi/ve-fpt-telecom/quan-he-co-dong/thong-bao-khac',
-        'https://fpt.vn/vi/ve-fpt-telecom/quan-he-co-dong/thong-bao-tra-co-tuc'
+        f'https://fpt.vn/vi/ve-fpt-telecom/quan-he-co-dong/thong-bao-khac?tag={year}',
+        f'https://fpt.vn/vi/ve-fpt-telecom/quan-he-co-dong/thong-bao-tra-co-tuc?tag={year}',
+        f'https://fpt.vn/vi/ve-fpt-telecom/quan-he-co-dong/bao-cao-tai-chinh?tag={year}',
+        f'https://fpt.vn/vi/ve-fpt-telecom/quan-he-co-dong/dai-hoi-co-dong-fpt-telecom?tag={year}',
+        f'https://fpt.vn/vi/ve-fpt-telecom/quan-he-co-dong/thong-bao-khac?tag={year-1}',
+        f'https://fpt.vn/vi/ve-fpt-telecom/quan-he-co-dong/thong-bao-tra-co-tuc?tag={year-1}',
+        f'https://fpt.vn/vi/ve-fpt-telecom/quan-he-co-dong/bao-cao-tai-chinh?tag={year-1}',
+        f'https://fpt.vn/vi/ve-fpt-telecom/quan-he-co-dong/dai-hoi-co-dong-fpt-telecom?tag={year-1}'
     ] 
 
     custom_settings = {
@@ -23,12 +29,16 @@ class EventSpider(scrapy.Spider):
         super(EventSpider, self).__init__(*args, **kwargs)
         self.db_path = 'stock_events.db'
 
-    def start_requests(self):
+    async def start(self):
         for url in self.start_urls:
             yield scrapy.Request(
                 url=url,
                 callback=self.parse,
-                meta={'playwright': True}
+                headers={
+                # Header quan trọng để server nhận diện đây là cuộc gọi XHR
+                'X-Requested-With': 'XMLHttpRequest',
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+            },
             )
 
     def parse(self, response):
@@ -45,7 +55,7 @@ class EventSpider(scrapy.Spider):
         ''')
 
         # 2. Nhắm mục tiêu hàng dữ liệu trong container AJAX
-        rows = response.css('#ajax-container table.table tbody tr.table-row')
+        rows = response.css('tr.table-row')
         
         for row in rows:
             title = row.css('td:nth-child(1)::text').get()

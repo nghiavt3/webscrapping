@@ -7,8 +7,20 @@ class EventSpider(scrapy.Spider):
     name = 'event_evg'
     mcpcty = 'EVG'
     allowed_domains = ['everland.vn'] 
-    start_urls = ['https://everland.vn/quan-he-co-dong/cong-bo-thong-tin'] 
-
+    async def start(self):
+        
+        yield scrapy.Request(
+                url='https://everland.vn/quan-he-co-dong/cong-bo-thong-tin', 
+                callback=self.parse
+                
+            )
+        
+        yield scrapy.Request(
+                url='https://everland.vn/quan-he-co-dong/bao-cao-tai-chinh', 
+                callback=self.parse_bctc,
+                meta={'playwright': True}
+            )
+        
     def __init__(self, *args, **kwargs):
         super(EventSpider, self).__init__(*args, **kwargs)
         self.db_path = 'stock_events.db'
@@ -18,7 +30,7 @@ class EventSpider(scrapy.Spider):
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
         table_name = f"{self.name}"
-        
+        #cursor.execute(f'''DROP TABLE IF EXISTS {table_name}''')
         cursor.execute(f'''
             CREATE TABLE IF NOT EXISTS {table_name} (
                 id TEXT PRIMARY KEY, mcp TEXT, date TEXT, summary TEXT, 
@@ -68,6 +80,80 @@ class EventSpider(scrapy.Spider):
             
             yield e_item
 
+        conn.close()
+
+    def parse_bctc(self, response):
+        # 1. Trích xuất danh sách các item (các năm)
+        items = response.css('div.owl-item.active')
+        
+        for item in items:
+            year = item.css('.year::text').get()
+            detail_url = item.css('a.link::attr(href)').get()
+            
+            if detail_url:
+                # 2. Gửi request vào link chi tiết và truyền dữ liệu 'year' đi cùng qua meta
+                yield scrapy.Request(
+                    url=response.urljoin(detail_url),
+                    callback=self.parse_detail,
+                    meta={'year': year}
+                )
+    
+    def parse_detail(self, response):
+        # 1. Kết nối SQLite và chuẩn bị bảng
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        table_name = f"{self.name}"
+        
+        cursor.execute(f'''
+            CREATE TABLE IF NOT EXISTS {table_name} (
+                id TEXT PRIMARY KEY, mcp TEXT, date TEXT, summary TEXT, 
+                scraped_at TEXT, web_source TEXT, details_clean TEXT
+            )
+        ''')
+        # 3. Trích xuất dữ liệu bên trong trang chi tiết
+        year = response.meta.get('year')
+        
+        # Giả sử trang chi tiết có các file báo cáo trong bảng
+        # Bạn cần thay đổi CSS Selector bên dưới tùy theo cấu trúc thực tế của trang con
+        rows = response.css('table.table tbody tr')
+        for row in rows:
+            # Lấy tiêu đề chính (ví dụ: Quý III, BÁN NIÊN)
+            noi_dung = row.css('td:nth-child(2) > a::text').get()
+            
+            # Lấy link Preview PDF từ các thẻ span
+            # nth-of-type(1) là BCTC Riêng, (2) là BCTC Hợp nhất
+            link_preview_rieng = row.css('td:nth-child(2) span:nth-of-type(1) a::attr(href)').get()
+            link_preview_hop_nhat = row.css('td:nth-child(2) span:nth-of-type(2) a::attr(href)').get()
+            
+            # Lấy ngày đăng (cột cuối cùng)
+            ngay_dang = row.css('td:last-child::text').get()
+
+            cleaned_title = f"{year}-{noi_dung.strip()}"
+            # Xử lý ngày: Everland dùng định dạng (DD.MM.YYYY)
+            cleaned_date = ngay_dang.strip('() \n\r\t') if ngay_dang else None
+            iso_date = convert_date_to_iso8601(cleaned_date)
+            full_doc_url = f"{response.urljoin(link_preview_rieng)}\n{response.urljoin(link_preview_hop_nhat)}"
+
+            # -------------------------------------------------------
+            # 3. KIỂM TRA ĐIỂM DỪNG (INCREMENTAL LOGIC)
+            # -------------------------------------------------------
+            event_id = f"{cleaned_title}_{iso_date}".replace(' ', '_').strip()[:150]
+            
+            cursor.execute(f"SELECT id FROM {table_name} WHERE id = ?", (event_id,))
+            if cursor.fetchone():
+                self.logger.info(f"===> GẶP TIN CŨ: [{cleaned_title}]. DỪNG QUÉT.")
+                break 
+
+            # 4. Yield Item
+            e_item = EventItem()
+            e_item['mcp'] = self.mcpcty
+            e_item['web_source'] = self.allowed_domains[0]
+            e_item['summary'] = cleaned_title
+            e_item['date'] = iso_date
+            e_item['details_raw'] = f"{cleaned_title}\nLink: {full_doc_url}"
+            e_item['scraped_at'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            
+            yield e_item
         conn.close()
 
 def convert_date_to_iso8601(vietnam_date_str):

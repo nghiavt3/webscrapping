@@ -9,25 +9,27 @@ class EventSpider(scrapy.Spider):
     name = 'event_agr'
     mcpcty = 'AGR'
     allowed_domains = ['agriseco.com.vn'] 
-    start_urls = ['https://agriseco.com.vn/InvestorRelations/IRInGroup/25/vi-VN'] 
+    start_urls = ['https://agriseco.com.vn/InvestorRelations/IRInGroup/25/vi-VN',
+                  'https://agriseco.com.vn/InvestorRelations/IRInGroup/28/vi-VN'] 
 
     def __init__(self, *args, **kwargs):
         super(EventSpider, self).__init__(*args, **kwargs)
         # Đường dẫn file db khớp với dự án
         self.db_path = 'stock_events.db'
 
-    def start_requests(self):
-        yield scrapy.Request(
-            url=self.start_urls[0],
-            callback=self.parse,
-            meta={
-                "playwright": True,
-                "playwright_page_methods": [
-                    PageMethod("wait_for_selector", "div.div-grid-obj"),
-                    PageMethod("wait_for_timeout", 1000), 
-                ],
-            }
-        )
+    async def start(self):
+        for url in self.start_urls:
+            yield scrapy.Request(
+                url=url,
+                callback=self.parse,
+                meta={
+                    "playwright": True,
+                    "playwright_page_methods": [
+                        PageMethod("wait_for_selector", "div.div-grid-obj"),
+                        PageMethod("wait_for_timeout", 1000), 
+                    ],
+                }
+            )
         
     def parse(self, response):
         # 1. Mở kết nối SQLite

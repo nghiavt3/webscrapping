@@ -7,13 +7,15 @@ class EventSpider(scrapy.Spider):
     name = 'event_tlh'
     mcpcty = 'TLH'
     allowed_domains = ['tienlensteel.com.vn'] 
-    start_urls = ['https://tienlensteel.com.vn/vi/relation/0'] 
+    start_urls = ['https://tienlensteel.com.vn/vi/relation/0',
+                  'https://tienlensteel.com.vn/vi/relation/3',
+                  'https://tienlensteel.com.vn/vi/relation/2'] 
 
     def __init__(self, *args, **kwargs):
         super(EventSpider, self).__init__(*args, **kwargs)
         self.db_path = 'stock_events.db'
 
-    def start_requests(self):
+    async def start(self):
         for url in self.start_urls:
             yield scrapy.Request(
                 url=url,

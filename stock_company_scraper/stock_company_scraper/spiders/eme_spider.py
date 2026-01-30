@@ -7,7 +7,9 @@ class EventSpider(scrapy.Spider):
     name = 'event_eme'
     mcpcty = 'EME'
     allowed_domains = ['emec.vn'] 
-    start_urls = ['http://emec.vn/thong-bao/vn'] 
+    start_urls = ['http://emec.vn/thong-bao/vn',
+                    'http://emec.vn/bao-cao-tai-chinh/vn',
+                    'http://emec.vn/dai-hoi-dong-co-dong/vn'] 
 
     def __init__(self, *args, **kwargs):
         super(EventSpider, self).__init__(*args, **kwargs)

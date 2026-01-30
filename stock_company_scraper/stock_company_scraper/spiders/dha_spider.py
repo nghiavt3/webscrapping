@@ -8,7 +8,10 @@ class EventSpider(scrapy.Spider):
     mcpcty = 'DHA'
     allowed_domains = ['hoaan.com.vn'] 
     # Khởi đầu với năm hiện tại
-    start_urls = [f'http://www.hoaan.com.vn/nam-{datetime.now().year}-cn62/'] 
+    start_urls = [#f'http://www.hoaan.com.vn/nam-{datetime.now().year}-cn62/',
+                  'http://www.hoaan.com.vn/nam-2025-cn63/',
+                  'http://www.hoaan.com.vn/nam-2026-cn76/',
+                  'http://www.hoaan.com.vn/nam-2025-cn63/'] 
 
     def __init__(self, *args, **kwargs):
         super(EventSpider, self).__init__(*args, **kwargs)

@@ -8,8 +8,19 @@ class EventSpider(scrapy.Spider):
     name = 'event_ccc'
     mcpcty = 'CCC'
     allowed_domains = ['cdcxd.com.vn'] 
-    start_urls = ['https://cdcxd.com.vn/cong-bo-thong-tin/'] 
-
+    
+    async def start(self):
+        urls = [
+            ('https://cdcxd.com.vn/cong-bo-thong-tin/', self.parse),
+            ('https://cdcxd.com.vn/bao-cao-tai-chinh/', self.parse_generic),
+            ('https://cdcxd.com.vn/dai-hoi-co-dong/', self.parse_generic),
+        ]
+        for url, callback in urls:
+            yield scrapy.Request(
+                url=url, 
+                callback=callback,
+                #meta={'playwright': True}
+            )
     def __init__(self, *args, **kwargs):
         super(EventSpider, self).__init__(*args, **kwargs)
         self.db_path = 'stock_events.db'
@@ -40,6 +51,68 @@ class EventSpider(scrapy.Spider):
             document_title = row.css('td:nth-child(1) h4.document-title a::text').get()
             release_date = row.css('td:nth-child(2)::text').get()
             download_url = row.css('td:nth-child(3) a::attr(href)').get()
+
+            if not document_title or not release_date:
+                continue
+
+            # Làm sạch dữ liệu
+            clean_title = document_title.strip()
+            iso_date = convert_date_to_iso8601(release_date.strip())
+            full_url = response.urljoin(download_url)
+
+            # -------------------------------------------------------
+            # 3. KIỂM TRA ĐIỂM DỪNG (INCREMENTAL LOGIC)
+            # -------------------------------------------------------
+            # Tạo ID duy nhất để đối chiếu
+            event_id = f"{clean_title}_{iso_date}".replace(' ', '_').strip()[:150]
+            
+            cursor.execute(f"SELECT id FROM {table_name} WHERE id = ?", (event_id,))
+            if cursor.fetchone():
+                self.logger.info(f"===> GẶP TIN CŨ: [{clean_title}]. DỪNG QUÉT GIA TĂNG.")
+                break 
+
+            # 4. Yield Item
+            e_item = EventItem()
+            e_item['mcp'] = self.mcpcty
+            e_item['web_source'] = self.allowed_domains[0]
+            e_item['summary'] = clean_title
+            e_item['details_raw'] = f"{clean_title}\nLink: {full_url}"
+            e_item['date'] = iso_date 
+            e_item['scraped_at'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            
+            yield e_item
+
+        conn.close()
+
+    def parse_generic(self, response):
+        # 1. Kết nối SQLite và tạo bảng nếu chưa có
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        
+        table_name = f"{self.name}"
+        cursor.execute(f'''
+            CREATE TABLE IF NOT EXISTS {table_name} (
+                id TEXT PRIMARY KEY,
+                mcp TEXT,
+                date TEXT,
+                summary TEXT,
+                scraped_at TEXT,
+                web_source TEXT,
+                details_clean TEXT
+            )
+        ''')
+
+        # 2. Chọn tất cả các hàng dữ liệu (<tr>), loại trừ hàng tiêu đề
+        rows = response.css('div.table-responsive table tr')[1:]
+        
+        for row in rows:
+            title_node = row.css('td:nth-child(1) h4.document-title a')
+            raw_date = row.css('td:nth-child(2)::text').get()
+            download_link = row.css('td:nth-child(3) a.btn-download::attr(href)').get()
+
+            document_title = title_node.css('::text').get().strip()
+            release_date = raw_date
+            download_url = download_link
 
             if not document_title or not release_date:
                 continue

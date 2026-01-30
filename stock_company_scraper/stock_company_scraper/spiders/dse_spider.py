@@ -2,12 +2,41 @@ import scrapy
 import sqlite3
 from stock_company_scraper.items import EventItem
 from datetime import datetime
-
+from scrapy_playwright.page import PageMethod
 class EventSpider(scrapy.Spider):
     name = 'event_dse'
     mcpcty = 'DSE'
     allowed_domains = ['ir.dnse.com.vn'] 
-    start_urls = ['https://ir.dnse.com.vn/vi/ntag-cong-bo-thong-tin-16'] 
+    start_urls = ['https://ir.dnse.com.vn/vi/ntag-cong-bo-thong-tin-16',
+                  'https://ir.dnse.com.vn/vi/ntag-dai-hoi-dong-co-dong-19',
+                  ] 
+    async def start(self):
+        urls = [
+            ('https://ir.dnse.com.vn/vi/ntag-cong-bo-thong-tin-16', self.parse),
+            ('https://ir.dnse.com.vn/vi/ntag-dai-hoi-dong-co-dong-19', self.parse),
+             ('https://ir.dnse.com.vn/vi/ctype-finance_report', self.parse_bctc),
+             
+            
+        ]
+        for url, callback in urls:
+            if url != 'https://ir.dnse.com.vn/vi/ctype-finance_report':
+                yield scrapy.Request(
+                    url=url, 
+                    callback=callback,
+                    #meta={'playwright': True}
+                )
+            else:
+                yield scrapy.Request(
+                    url=url, 
+                    callback=callback,
+                    meta={'playwright': True,
+                            "playwright_page_methods": [
+                                # Đợi cho đến khi thẻ div.item-brochure xuất hiện trong DOM
+                                PageMethod("wait_for_selector", "div.item-col")
+                            ]
+                          },
+                    
+                )
 
     def __init__(self, *args, **kwargs):
         super(EventSpider, self).__init__(*args, **kwargs)
@@ -72,5 +101,67 @@ class EventSpider(scrapy.Spider):
             e_item['scraped_at'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
             
             yield e_item
+
+        conn.close()
+
+    
+    def parse_bctc(self, response):
+        # 1. Kết nối SQLite và chuẩn bị bảng
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        table_name = f"{self.name}"
+        
+        cursor.execute(f'''
+            CREATE TABLE IF NOT EXISTS {table_name} (
+                id TEXT PRIMARY KEY, mcp TEXT, date TEXT, summary TEXT, 
+                scraped_at TEXT, web_source TEXT, details_clean TEXT
+            )
+        ''')
+        # 1. Lặp qua từng khối năm (accordion-item)
+        years = response.css('div.accordion-item.finance')
+        
+        for year_node in years:
+            # Lấy giá trị năm (ví dụ: 2025, 2024...)
+            year_val = year_node.css('span.year-title::text').get()
+            
+            # 2. Lặp qua từng cột Quý bên trong năm đó
+            quarters = year_node.css('div.item-col')
+            
+            for q_node in quarters:
+                # Lấy tên Quý (ví dụ: Quý 1, Quý 2...)
+                quarter_val = q_node.css('h3.quarter-title::text').get()
+                
+                # 3. Lặp qua từng file trong danh sách <ul> của Quý
+                files = q_node.css('ul li a')
+                
+                for f in files:
+                    title = f.css('span.text-dark::text').get()
+                    link = f.css('::attr(href)').get()
+                    
+                    if title:
+                        iso_date = None
+                        summary = f"{year_val}-{quarter_val}-{title.strip()}"
+                        full_url = response.urljoin(link) if link else ""
+
+                        # -------------------------------------------------------
+                        # 3. KIỂM TRA ĐIỂM DỪNG (INCREMENTAL LOGIC)
+                        # -------------------------------------------------------
+                        event_id = f"{summary}_{iso_date if iso_date else 'NODATE'}".replace(' ', '_').strip()[:150]
+                        
+                        cursor.execute(f"SELECT id FROM {table_name} WHERE id = ?", (event_id,))
+                        if cursor.fetchone():
+                            self.logger.info(f"===> GẶP TIN CŨ: [{summary}]. DỪNG QUÉT.")
+                            break 
+
+                        # 4. Yield Item cho Pipeline
+                        e_item = EventItem()
+                        e_item['mcp'] = self.mcpcty
+                        e_item['web_source'] = self.allowed_domains[0]
+                        e_item['summary'] = summary
+                        e_item['date'] = iso_date
+                        e_item['details_raw'] = f"{summary}\nLink: {full_url}"
+                        e_item['scraped_at'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                        
+                        yield e_item
 
         conn.close()
