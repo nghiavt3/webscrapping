@@ -12,7 +12,7 @@ class EventSpider(scrapy.Spider):
         super(EventSpider, self).__init__(*args, **kwargs)
         self.db_path = 'stock_events.db'
 
-    def start_requests(self):
+    async def start(self):
         # Duyệt song song cả hai nguồn tin tức quan trọng của VIB
         urls = [
             ('https://www.vib.com.vn/vn/nha-dau-tu/cong-bo-thong-tin', self.parse_cong_bo),

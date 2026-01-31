@@ -8,7 +8,8 @@ class EventSpider(scrapy.Spider):
     name = 'event_vgc'
     mcpcty = 'VGC'
     allowed_domains = ['viglacera.com.vn'] 
-    start_urls = ['https://viglacera.com.vn/document-category/cong-bo-thong-tin'] 
+    start_urls = ['https://viglacera.com.vn/document-category/cong-bo-thong-tin',
+                  'https://viglacera.com.vn/document-category/bao-cao-thuong-nien'] 
 
     def __init__(self, *args, **kwargs):
         super(EventSpider, self).__init__(*args, **kwargs)

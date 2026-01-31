@@ -3,6 +3,7 @@ import sqlite3
 from stock_company_scraper.items import EventItem
 from datetime import datetime
 from scrapy_playwright.page import PageMethod
+import json
 class EventSpider(scrapy.Spider):
     name = 'event_geg'
     mcpcty = 'GEG'
@@ -25,6 +26,17 @@ class EventSpider(scrapy.Spider):
                 callback=callback,
                 meta={'playwright': True}
             )
+        url_bctc=[  
+                    'https://web-be.geccom.vn/api/v2/front/post/tai-lieu-bao-cao/posts?search%5Bsession_tags.year_tags.id%3Ain%5D=15f911b7-7530-4626-be87-98156fe862db&search%5Bcategories.id%3Ain%5D=5d6a8d79-c9af-4223-bb46-edc58d3d3a22&page=1&limit=4',#2025
+                    'https://web-be.geccom.vn/api/v2/front/post/tai-lieu-bao-cao/posts?search%5Bsession_tags.year_tags.id%3Ain%5D=3bf2555f-82d9-4e55-98d8-bf8c5fab87b0&search%5Bcategories.id%3Ain%5D=5d6a8d79-c9af-4223-bb46-edc58d3d3a22&page=1&limit=4',#2026
+                    
+                  ]
+        for url in url_bctc:
+            yield scrapy.Request(
+                    url=url, 
+                    callback=self.parse_json,
+                    #meta={'playwright': True}
+                )    
         
         # yield scrapy.Request(
         #     url= 'https://geccom.vn/quan-he-nha-dau-tu#baocao',
@@ -33,20 +45,29 @@ class EventSpider(scrapy.Spider):
         #         "playwright_include_page": True,
         #         "playwright_page_methods": [
         #             # 1. Đợi và Click chọn Năm (ví dụ 2025)
-        #             PageMethod("wait_for_selector", "//p[text()='2025']"),
-        #             PageMethod("click", "//p[text()='2025']"),
+        #             # 1. Đợi slide thật của năm 2025 xuất hiện (loại bỏ các bản sao cloned)
+        #             PageMethod("wait_for_selector", ".slick-slide:not(.slick-cloned) >> text='2025'"),
                     
-        #             # 2. Nghỉ một chút để DOM cập nhật danh sách các loại báo cáo
-        #             PageMethod("wait_for_timeout", 1000), 
+        #             # 2. Cuộn nó vào vùng nhìn thấy (quan trọng với slider dạng trượt)
+        #             PageMethod("evaluate", "document.querySelector('.slick-slide:not(.slick-cloned) :text(\"2025\")').scrollIntoViewIfNeeded()"),
                     
-        #             # 3. Đợi và Click nút "Báo cáo Tài chính"
-        #             # Lưu ý: Viết đúng hoa thường như trong HTML: "Báo cáo Tài chính"
-        #             PageMethod("wait_for_selector", "//div[p[text()='Báo cáo Tài chính']]"),
-        #             PageMethod("click", "//div[p[text()='Báo cáo Tài chính']]"),
+        #             # 3. Click vào phần tử thật
+        #             PageMethod("click", ".slick-slide:not(.slick-cloned) >> text='2025'"),
                     
-        #             # 4. Đợi cho đến khi bảng dữ liệu thực sự hiện ra
-        #             # Thay '.content-table' bằng selector vùng chứa file PDF của trang GEC
-        #             PageMethod("wait_for_selector", ".flex-col", timeout=10000), 
+        #             # 4. Chờ một chút để slider hoàn tất hiệu ứng trượt và load dữ liệu mới
+        #             PageMethod("wait_for_timeout", 1000),
+                    
+        #             # 1. Đợi nút "Báo cáo Tài chính" xuất hiện
+        #             PageMethod("wait_for_selector", "div.cursor-pointer >> p:has-text('Báo cáo Tài chính')"),
+                    
+        #             # 2. Click vào nút "Báo cáo Tài chính"
+        #             # Sử dụng :has-text để Playwright tự tìm div cha chứa thẻ p đó và click
+        #             PageMethod("click", "div.cursor-pointer:has(p:has-text('Báo cáo Tài chính'))"),
+                    
+        #             # 3. Đợi dữ liệu bảng hoặc danh sách file PDF tải xong
+        #             # Bạn nên thay thế bằng selector của danh sách bài viết thực tế
+        #             PageMethod("wait_for_load_state", "networkidle"), 
+        #             PageMethod("wait_for_timeout", 1000),
         #         ],
         #     },
         #     callback=self.parse_bctc
@@ -162,6 +183,50 @@ class EventSpider(scrapy.Spider):
 
         conn.close()
 
+    async def parse_json(self, response):
+        # Chuyển đổi nội dung phản hồi thành JSON
+        json_response = json.loads(response.text)
+        
+        # 1. Duyệt qua danh sách các bài viết trong 'data'
+        posts = json_response.get('data', [])
+        
+        for post in posts:
+            summary =post.get('title')
+            iso_date = post.get('published_start')[:10]
+            file_info = post.get('featured_image_1')
+            link = file_info.get('path')
+            
+            e_item = EventItem()
+            e_item['mcp'] = self.mcpcty
+            e_item['web_source'] = self.allowed_domains[0]
+            e_item['summary'] = summary
+            e_item['date'] = iso_date
+            e_item['details_raw'] = f"{summary}\nLink: {link}"
+            e_item['scraped_at'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            
+            # item = {}
+            
+            # # Trích xuất thông tin văn bản
+            # item['tieu_de'] = post.get('title')
+            # item['slug'] = post.get('slug')
+            # item['ngay_dang'] = post.get('published_start')
+            
+            # # Trích xuất thông tin file PDF từ 'featured_image_1'
+            # file_info = post.get('featured_image_1')
+            # if file_info:
+            #     item['ten_file'] = file_info.get('title')
+            #     item['link_file'] = file_info.get('path')
+            #     item['alt_text'] = file_info.get('alt')
+            # else:
+            #     item['ten_file'] = None
+            #     item['link_file'] = None
+            
+            # Trích xuất năm (từ session_tags)
+            # year_tags = post.get('session_tags', {}).get('year_tags', [])
+            # item['nam'] = year_tags[0].get('title') if year_tags else "N/A"
+            
+            yield e_item
+    
 def convert_date_to_iso8601(vietnam_date_str):
     if not vietnam_date_str:
         return None

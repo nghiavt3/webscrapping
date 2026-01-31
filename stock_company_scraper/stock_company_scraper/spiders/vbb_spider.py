@@ -12,12 +12,17 @@ class EventSpider(scrapy.Spider):
         super(EventSpider, self).__init__(*args, **kwargs)
         self.db_path = 'stock_events.db'
     
-    def start_requests(self):
+    async def start(self):
         year = datetime.now().year
         month = datetime.now().month
         urls = [
             (f"https://www.vietbank.com.vn/nha-dau-tu/cong-bo-thong-tin?year={year}&category=2&month={month}", self.parse_generic),
             (f"https://www.vietbank.com.vn/nha-dau-tu/cong-bo-thong-tin?year={year}&category=1&month={month}", self.parse_generic),
+            (f"https://www.vietbank.com.vn/nha-dau-tu/bao-cao-dinh-ky?category=5&year={year}&quarter=01", self.parse_generic),
+            (f"https://www.vietbank.com.vn/nha-dau-tu/bao-cao-dinh-ky?category=5&year={year}&quarter=02", self.parse_generic),
+            (f"https://www.vietbank.com.vn/nha-dau-tu/bao-cao-dinh-ky?category=5&year={year}&quarter=03", self.parse_generic),
+            (f"https://www.vietbank.com.vn/nha-dau-tu/bao-cao-dinh-ky?category=5&year={year}&quarter=04", self.parse_generic),
+            
         ]
         for url, callback in urls:
             yield scrapy.Request(
@@ -26,7 +31,7 @@ class EventSpider(scrapy.Spider):
                 #meta={'playwright': True}
             )
 
-    def parse_generic(self, response):
+    async def parse_generic(self, response):
         year = datetime.now().year
         month = datetime.now().month
         """Hàm parse dùng chung cho các chuyên mục"""
