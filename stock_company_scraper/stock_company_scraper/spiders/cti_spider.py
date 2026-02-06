@@ -55,7 +55,7 @@ class EventSpider(scrapy.Spider):
         for item in news_items:
             title = item.get("Title", "").strip()
             date_pub = item.get("DatePub", "") # Định dạng: "DD/MM/YYYY HH:MM"
-            raw_url = item.get("URL", "")
+            raw_url = item.get("URL", "").replace('\\', '/').replace(' ', '%20')
             final_url = raw_url.replace('\\', '/')
 
             iso_date = convert_date_to_iso8601(date_pub)

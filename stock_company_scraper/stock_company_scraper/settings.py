@@ -52,7 +52,7 @@ DOWNLOAD_TIMEOUT = 180
 CONCURRENT_REQUESTS = 16 
 CONCURRENT_REQUESTS_PER_DOMAIN = 8
 # Disable cookies (enabled by default)
-#COOKIES_ENABLED = False
+COOKIES_ENABLED = True
 # Tăng thời gian chờ cho quá trình dọn dẹp Playwright/AsyncIO (từ 5 giây lên 10 giây hoặc hơn)
 # Điều này cho phép các tác vụ đang chờ (pending tasks) có thời gian hoàn tất.
 PLAYWRIGHT_CLOSING_TIMEOUT = 10

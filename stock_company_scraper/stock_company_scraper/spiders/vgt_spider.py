@@ -55,7 +55,7 @@ class EventSpider(scrapy.Spider):
             title = item.get("Title")
             date_pub_raw = item.get("DatePub") # Định dạng: "DD/MM/YYYY HH:MM"
             raw_url = item.get("URL", "")
-            final_url = raw_url.replace('\\', '/')
+            final_url = raw_url.replace('\\', '/').replace(' ', '%20')
 
             if not title or not date_pub_raw:
                 continue

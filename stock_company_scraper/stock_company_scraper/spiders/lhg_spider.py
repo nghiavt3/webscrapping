@@ -50,7 +50,7 @@ class EventSpider(scrapy.Spider):
         for item in news_items:
             title = item.get('Title', '').strip()
             pub_date = item.get('DatePub', '')
-            pdf_url = item.get('URL', '')
+            pdf_url = item.get('URL', '').replace('\\', '/').replace(' ', '%20')
 
             if not title:
                 continue

@@ -61,9 +61,9 @@ class EventSpider(scrapy.Spider):
             raw_datetime = item.css('.investor-item__datetime::text').getall()
             clean_datetime = " ".join([t.strip() for t in raw_datetime if t.strip()])
             # 3. Trích xuất Link xem online (Thường là link PDF)
-            view_online = item.css('a.investor-item__btn--dark::attr(href)').get()
+            view_online = item.css('a.investor-item__btn--dark::attr(href)').get().replace('\\', '/').replace(' ', '%20')
             # Trích xuất link PDF
-            pdf_url = item.css('a.investor-item__btn--primary::attr(href)').get()
+            pdf_url = item.css('a.investor-item__btn--primary::attr(href)').get().replace('\\', '/').replace(' ', '%20')
 
             if not title:
                 continue

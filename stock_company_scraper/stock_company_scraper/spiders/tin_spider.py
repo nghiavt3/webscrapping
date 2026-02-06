@@ -63,7 +63,7 @@ class EventSpider(scrapy.Spider):
                     meta={'item': e_item}  # Chuyển dữ liệu sang hàm tiếp theo
                 )
             else:
-                yield e_item
+                yield e_item 
         conn.close()
     def parse_detail(self, response):
         # Nhận lại item từ trang danh sách gửi qua meta

@@ -135,10 +135,42 @@ class EventSpider(scrapy.Spider):
             full_article_url = response.urljoin(url)
             item['details_raw'] = f"{summary}\nURL: {full_article_url}"
             item['scraped_at'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-            
-            yield item
+            if full_article_url  and "bctc" in summary.lower():
+                yield scrapy.Request(
+                    url=full_article_url,
+                    callback=self.parse_detail,
+                    meta={'item': item}  # Chuyển dữ liệu sang hàm tiếp theo
+                )
+            else:
+                yield item
 
         conn.close()    
+    
+    def parse_detail(self, response):
+        # Nhận lại item từ trang danh sách gửi qua meta
+        item = response.meta['item']
+        
+        # 1. Trích xuất tất cả các link PDF trong khối chi tiết
+        # Chúng ta tìm các thẻ <a> nằm trong .blog-details-col có href chứa ".pdf"
+        pdf_elements = response.css('.blog-details-col a[href$=".pdf"]')
+        
+        files = []
+        for anchor in pdf_elements:
+            file_name = anchor.css('::text').get()
+            file_url = anchor.css('::attr(href)').get()
+            
+            if file_url:
+                files.append({
+                    'file_name': file_name.strip() if file_name else "Untitled",
+                    'file_url': response.urljoin(file_url) # Đảm bảo link tuyệt đối
+                })
+                item['details_raw'] = f"{item['details_raw']}\n {response.urljoin(file_url)}"
+        
+        # 2. Gán danh sách file vào item
+        #item['details_raw'] = f"{item['details_raw']}/n pdf:{files}"
+        
+        # 3. Trả về item hoàn chỉnh cho Pipeline
+        yield item
 def convert_to_isodate(date_str):
     if not date_str:
         return None

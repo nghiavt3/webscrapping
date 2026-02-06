@@ -55,7 +55,7 @@ class EventSpider(scrapy.Spider):
         for item in news_items:
             title = item.get('Title', '').strip()
             pub_date_raw = item.get('DatePub', '')
-            url = item.get('URL', '')
+            url = item.get('URL', '').replace('\\', '/').replace(' ', '%20')
             
             iso_date = convert_date_to_iso8601(pub_date_raw)
 

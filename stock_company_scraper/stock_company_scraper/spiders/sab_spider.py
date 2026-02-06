@@ -25,6 +25,7 @@ class EventSpider(scrapy.Spider):
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
         table_name = f"{self.name}"
+        #cursor.execute(f'''DROP TABLE IF EXISTS {table_name}''')
         cursor.execute(f'''
             CREATE TABLE IF NOT EXISTS {table_name} (
                 id TEXT PRIMARY KEY, mcp TEXT, date TEXT, summary TEXT, 
@@ -48,7 +49,7 @@ class EventSpider(scrapy.Spider):
             # Làm sạch chuỗi ngày tháng (Sabeco thường để định dạng DD/MM/YYYY)
             
             iso_date = convert_date_to_iso8601(date)
-            full_url = response.urljoin(link)
+            full_url = response.urljoin(link).replace(" ", "%20")
 
             # -------------------------------------------------------
             # 3. KIỂM TRA ĐIỂM DỪNG (INCREMENTAL LOGIC)

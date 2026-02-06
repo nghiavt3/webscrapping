@@ -11,7 +11,7 @@ class EventSpider(scrapy.Spider):
 
     async def start(self):
         urls = [
-            #('https://investor.vietinbank.vn/Filings.aspx', self.parse),
+            ('https://investor.vietinbank.vn/Filings.aspx', self.parse),
              ('https://investor.vietinbank.vn/vi/download.aspx', self.parse_bctc),
              ('https://investor.vietinbank.vn/vi/extraordinaryreports.aspx', self.parse_cbtt),
              ('https://investor.vietinbank.vn/vi/periodicreports.aspx', self.parse_cbtt),
@@ -34,7 +34,7 @@ class EventSpider(scrapy.Spider):
         # 1. Kết nối SQLite và chuẩn bị bảng
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
-        
+        #cursor.execute(f'''DROP TABLE IF EXISTS {table_name}''')
         table_name = f"{self.name}"
         cursor.execute(f'''
             CREATE TABLE IF NOT EXISTS {table_name} (
@@ -65,7 +65,7 @@ class EventSpider(scrapy.Spider):
 
             # Làm sạch và định dạng
             iso_date = convert_date_to_iso8601(pub_date)
-            full_url = response.urljoin(url)
+            full_url = response.urljoin(url).replace('\\', '/').replace(' ', '%20')
 
             # -------------------------------------------------------
             # 3. KIỂM TRA ĐIỂM DỪNG (INCREMENTAL LOGIC)
@@ -96,6 +96,7 @@ class EventSpider(scrapy.Spider):
         cursor = conn.cursor()
         
         table_name = f"{self.name}"
+        #cursor.execute(f'''DROP TABLE IF EXISTS {table_name}''')
         cursor.execute(f'''
             CREATE TABLE IF NOT EXISTS {table_name} (
                 id TEXT PRIMARY KEY,
@@ -126,7 +127,7 @@ class EventSpider(scrapy.Spider):
             # Làm sạch và định dạng
             summary = title.strip()
             iso_date = None
-            full_url = response.urljoin(url)
+            full_url = response.urljoin(url).replace('\\', '/').replace(' ', '%20')
 
             # -------------------------------------------------------
             # 3. KIỂM TRA ĐIỂM DỪNG (INCREMENTAL LOGIC)

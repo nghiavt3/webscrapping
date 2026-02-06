@@ -65,7 +65,7 @@ class EventSpider(scrapy.Spider):
         for article in articles: 
             title = article.css('.article-title a::text').get(default='').strip()
             date = article.css('.post-date::text').get()
-            link = article.css('.article-title a::attr(href)').get()
+            link = article.css('.article-title a::attr(href)').get().replace('\\', '/').replace(' ', '%20')
             if not title:
                 continue
 

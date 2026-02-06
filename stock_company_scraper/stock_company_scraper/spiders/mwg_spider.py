@@ -45,12 +45,12 @@ class EventSpider(scrapy.Spider):
             # -------------------------------------------------------
             # 3. KIỂM TRA ĐIỂM DỪNG (INCREMENTAL LOGIC)
             # -------------------------------------------------------
-            event_id = f"{summary}_{iso_date}".replace(' ', '_').strip()[:150]
+            # event_id = f"{summary}_{iso_date}".replace(' ', '_').strip()[:150]
             
-            cursor.execute(f"SELECT id FROM {table_name} WHERE id = ?", (event_id,))
-            if cursor.fetchone():
-                self.logger.info(f"===> GẶP TIN CŨ: [{summary}]. DỪNG QUÉT.")
-                break 
+            # cursor.execute(f"SELECT id FROM {table_name} WHERE id = ?", (event_id,))
+            # if cursor.fetchone():
+            #     self.logger.info(f"===> GẶP TIN CŨ: [{summary}]. DỪNG QUÉT.")
+            #     break 
 
             # 4. Yield Item
             e_item = EventItem()
