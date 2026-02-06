@@ -7,7 +7,7 @@ class EventSpider(scrapy.Spider):
     name = 'event_tpb'
     mcpcty = 'TPB'
     allowed_domains = ['tpb.vn'] 
-    start_urls = ['https://tpb.vn/nha-dau-tu/thong-bao-co-dong'] 
+    start_urls = ['https://tpb.vn/nha-dau-tu/thong-bao-co-dong','https://tpb.vn/nha-dau-tu/bao-cao-tai-chinh'] 
 
     def __init__(self, *args, **kwargs):
         super(EventSpider, self).__init__(*args, **kwargs)

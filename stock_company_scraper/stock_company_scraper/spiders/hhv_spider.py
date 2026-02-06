@@ -8,12 +8,22 @@ class EventSpider(scrapy.Spider):
     mcpcty = 'HHV'
     allowed_domains = ['hhv.com.vn'] 
     start_urls = ['https://hhv.com.vn/cong-bo-thong-tin/'] 
-
+    async def start(self):
+        urls = [
+            ('https://hhv.com.vn/cong-bo-thong-tin/', self.parse),  
+            ('https://hhv.com.vn/bao-cao-tai-chinh/', self.parse_bctc),     
+        ]
+        for url, callback in urls:
+            yield scrapy.Request(
+                url=url, 
+                callback=callback,
+                #meta={'playwright': True}
+            )
     def __init__(self, *args, **kwargs):
         super(EventSpider, self).__init__(*args, **kwargs)
         self.db_path = 'stock_events.db'
 
-    def parse(self, response):
+    async def parse(self, response):
         # 1. Kết nối SQLite và chuẩn bị bảng
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
@@ -62,6 +72,60 @@ class EventSpider(scrapy.Spider):
             e_item['scraped_at'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
             
             yield e_item
+
+        conn.close()
+
+    async def parse_bctc(self, response):
+        # 1. Kết nối SQLite và chuẩn bị bảng
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        table_name = f"{self.name}"
+        cursor.execute(f'''
+            CREATE TABLE IF NOT EXISTS {table_name} (
+                id TEXT PRIMARY KEY, mcp TEXT, date TEXT, summary TEXT, 
+                scraped_at TEXT, web_source TEXT, details_clean TEXT
+            )
+        ''')
+
+        # 2. Lấy tất cả các hàng dữ liệu trong bảng Ninja Tables
+        rows = response.css('tr.plus-table-row')
+
+        for row in rows:
+            file_url = row.css('td[data-title="Văn bản"] a::attr(href)').get()
+            if file_url:
+                # 2. Trích xuất tên báo cáo
+                title = row.css('td[data-title="Văn bản"] .plus-table__text-inner::text').get()
+                
+                # 3. Trích xuất ngày phát hành
+                # Sử dụng data-title để nhắm chính xác cột, tránh nhầm lẫn
+                date_issue = row.css('td[data-title="Ngày phát hành"] .plus-table__text-inner::text').get()
+
+                if not title:
+                    continue
+
+                iso_date = convert_date_to_iso8601(date_issue)
+                full_url = response.urljoin(file_url)
+
+                # -------------------------------------------------------
+                # 3. KIỂM TRA ĐIỂM DỪNG (INCREMENTAL LOGIC)
+                # -------------------------------------------------------
+                event_id = f"{title}_{iso_date}".replace(' ', '_').strip()[:150]
+                
+                cursor.execute(f"SELECT id FROM {table_name} WHERE id = ?", (event_id,))
+                if cursor.fetchone():
+                    self.logger.info(f"===> GẶP TIN CŨ: [{title}]. DỪNG QUÉT.")
+                    break 
+
+                # 4. Yield Item
+                e_item = EventItem()
+                e_item['mcp'] = self.mcpcty
+                e_item['web_source'] = self.allowed_domains[0]
+                e_item['summary'] = title
+                e_item['date'] = iso_date
+                e_item['details_raw'] = f"{title}\nLink: {full_url}"
+                e_item['scraped_at'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                
+                yield e_item
 
         conn.close()
 

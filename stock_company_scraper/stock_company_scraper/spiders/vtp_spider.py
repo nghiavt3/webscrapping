@@ -7,7 +7,10 @@ class EventSpider(scrapy.Spider):
     name = 'event_vtp'
     mcpcty = 'VTP'
     allowed_domains = ['viettelpost.com.vn'] 
-    start_urls = ['https://viettelpost.com.vn/tin-co-dong/'] 
+    start_urls = ['https://viettelpost.com.vn/tin-co-dong/',
+                  'https://viettelpost.com.vn/bao-cao-tai-chinh/',
+                  'https://viettelpost.com.vn/dai-hoi-dong-co-dong/'
+                  ] 
 
     # Cấu hình tối ưu cho Playwright và tránh bị chặn
     custom_settings = {
@@ -21,17 +24,19 @@ class EventSpider(scrapy.Spider):
         self.db_path = 'stock_events.db'
 
     def start_requests(self):
-        yield scrapy.Request(
-            url=self.start_urls[0],
-            callback=self.parse,
-            meta={'playwright': True}
-        )
+        for url in self.start_urls:
+            yield scrapy.Request(
+                url=url,
+                callback=self.parse,
+                meta={'playwright': True}
+            )
 
     def parse(self, response):
         # 1. Khởi tạo SQLite
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
         table_name = f"{self.name}"
+        #cursor.execute(f'''DROP TABLE IF EXISTS {table_name}''')
         cursor.execute(f'''
             CREATE TABLE IF NOT EXISTS {table_name} (
                 id TEXT PRIMARY KEY, mcp TEXT, date TEXT, summary TEXT, 
@@ -40,15 +45,15 @@ class EventSpider(scrapy.Spider):
         ''')
 
         # 2. Lấy tất cả các khối tin bài (hỗ trợ cả 3 loại item của VTP)
-        records = response.css('div.first-item, div.second-item, div.normal-item')
+        items = response.css('div.list-item div.item.normal-item')
         
-        for record in records:
-            title = record.css('h5::text, p.title::text').get()
-            description = record.css('p.des::text, p.description::text').get()
-            article_url = record.css('a::attr(href)').get()
+        for item in items:
+            title = item.css('p.title::text').get().strip()
+            description = item.css('p.description::text').get().strip()
+            article_url = item.css('div.content a.text-black::attr(href)').get()
             
             # Xử lý ngày tháng từ nhiều node span hoặc p
-            date_nodes = record.css('div.meta span::text, p.date::text').getall()
+            date_nodes = item.css('p.date::text').getall()
             date_raw = " ".join(date_nodes).replace('\xa0', ' ').strip()
             
             if not title or not date_raw:

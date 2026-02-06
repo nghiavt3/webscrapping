@@ -16,7 +16,7 @@ class EventSpider(scrapy.Spider):
         super(EventSpider, self).__init__(*args, **kwargs)
         self.db_path = 'stock_events.db'
 
-    def start_requests(self):
+    async def start(self):
         for url in self.start_urls:
             yield scrapy.Request(
                 url=url,
@@ -55,7 +55,7 @@ class EventSpider(scrapy.Spider):
         for item in news_items:
             title = item.get('Title')
             pub_date = item.get('DatePub')
-            url = item.get('URL')
+            url = item.get('URL').replace('\\', '/').replace(' ', '%20')
 
             if not title or not pub_date:
                 continue

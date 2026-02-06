@@ -9,7 +9,7 @@ class EventSpider(scrapy.Spider):
     name = 'event_aps'
     mcpcty = 'APS'
     allowed_domains = ['apec.com.vn'] 
-    start_urls = ['https://apec.com.vn/quan-he-co-dong/thong-tin-co-dong/'] 
+    start_urls = ['https://apec.com.vn/quan-he-co-dong/thong-tin-co-dong/','https://apec.com.vn/quan-he-co-dong/bao-cao-tai-chinh/'] 
 
     def __init__(self, *args, **kwargs):
         super(EventSpider, self).__init__(*args, **kwargs)

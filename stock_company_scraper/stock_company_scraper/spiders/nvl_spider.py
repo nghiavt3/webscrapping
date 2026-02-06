@@ -7,13 +7,14 @@ class EventSpider(scrapy.Spider):
     name = 'event_nvl'
     mcpcty = 'NVL'
     allowed_domains = ['novaland.com.vn'] 
-    start_urls = ['https://www.novaland.com.vn/quan-he-dau-tu/cong-bo-thong-tin/thong-bao'] 
+    start_urls = ['https://www.novaland.com.vn/quan-he-dau-tu/cong-bo-thong-tin/thong-bao',
+                  'https://www.novaland.com.vn/quan-he-dau-tu/cong-bo-thong-tin/bao-cao-tai-chinh'] 
 
     def __init__(self, *args, **kwargs):
         super(EventSpider, self).__init__(*args, **kwargs)
         self.db_path = 'stock_events.db'
 
-    def parse(self, response):
+    async def parse(self, response):
         # 1. Kết nối và khởi tạo bảng SQLite
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()

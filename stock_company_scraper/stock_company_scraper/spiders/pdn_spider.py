@@ -12,7 +12,7 @@ class EventSpider(scrapy.Spider):
         super(EventSpider, self).__init__(*args, **kwargs)
         self.db_path = 'stock_events.db'
 
-    def start_requests(self):
+    async def start(self):
         urls = [
             ('http://dongnai-port.com/Pages/cong-bo-thong-tin.aspx', self.parse_generic),
              ('http://dongnai-port.com/Pages/bao-cao-tai-chinh-qua-cac-nam.aspx', self.parse_generic),
@@ -27,7 +27,7 @@ class EventSpider(scrapy.Spider):
                 #meta={'playwright': True}
             )
 
-    def parse_generic(self, response):
+    async def parse_generic(self, response):
         """Hàm parse dùng chung cho các chuyên mục của SeABank"""
         # 1. Khởi tạo SQLite
         conn = sqlite3.connect(self.db_path)

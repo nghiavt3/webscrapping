@@ -8,15 +8,47 @@ class EventSpider(scrapy.Spider):
     mcpcty = 'HTG'
     
     # Tự động lấy năm hiện tại cho URL
-    current_year = datetime.now().year
+    
     allowed_domains = ['hoatho.com.vn'] 
-    start_urls = [f'https://hoatho.com.vn/quan-he-co-dong/thong-tin-co-dong/{current_year}'] 
+    #start_urls = [f'https://hoatho.com.vn/quan-he-co-dong/thong-tin-co-dong/{current_year}'] 
+
+    async def start(self):
+        current_year = datetime.now().year
+        urls = [
+           # (f'https://hoatho.com.vn/quan-he-co-dong/thong-tin-co-dong/{current_year}', self.parse),
+            ('https://hoatho.com.vn/', self.parse_bctc),
+             
+        ]
+        for url, callback in urls:
+            yield scrapy.Request(
+                url=url, 
+                callback=callback,
+                #meta={'playwright': True}
+            )
 
     def __init__(self, *args, **kwargs):
         super(EventSpider, self).__init__(*args, **kwargs)
         self.db_path = 'stock_events.db'
-
-    def parse(self, response):
+    async def parse_bctc(self, response):
+        finance_url = response.css('nav#autoClone-NavMenu a[title="Tình hình tài chính"]::attr(href)').get()
+        dhcd_url = response.css('nav#autoClone-NavMenu a[title="Đại hội đồng cổ đông"]::attr(href)').get()
+        ttcd_url = response.css('nav#autoClone-NavMenu a[title="Thông tin cổ đông"]::attr(href)').get()
+        if finance_url:
+            yield scrapy.Request(
+                url=response.urljoin(finance_url), 
+                callback=self.parse
+            )
+        if dhcd_url:
+            yield scrapy.Request(
+                url=response.urljoin(dhcd_url), 
+                callback=self.parse
+            )
+        if ttcd_url:
+            yield scrapy.Request(
+                url=response.urljoin(ttcd_url), 
+                callback=self.parse
+            )    
+    async def parse(self, response):
         # 1. Khởi tạo SQLite
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()

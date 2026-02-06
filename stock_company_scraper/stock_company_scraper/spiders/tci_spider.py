@@ -20,7 +20,7 @@ class EventSpider(scrapy.Spider):
         super(EventSpider, self).__init__(*args, **kwargs)
         self.db_path = 'stock_events.db'
 
-    def parse(self, response):
+    async def parse(self, response):
         # 1. Khởi tạo SQLite
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()

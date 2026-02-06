@@ -6,20 +6,26 @@ from datetime import datetime
 class EventSpider(scrapy.Spider):
     name = 'event_dvc'
     mcpcty = 'DVC'
-    allowed_domains = ['dichvucang.com'] 
-    start_urls = ['https://www.dichvucang.com/default.aspx?pageid=news&cate=3'] 
+    allowed_domains = ['dichvucang.com','finance.vietstock.vn'] 
+    
 
     def __init__(self, *args, **kwargs):
         super(EventSpider, self).__init__(*args, **kwargs)
         self.db_path = 'stock_events.db'
 
-    def start_requests(self):
-        for url in self.start_urls:
-            yield scrapy.Request(
-                url=url,
+    async def start(self):
+        
+        yield scrapy.Request(
+                url='https://www.dichvucang.com/default.aspx?pageid=news&cate=3', 
                 callback=self.parse,
                 meta={'playwright': True}
             )
+        yield scrapy.Request(
+                url='https://finance.vietstock.vn/DVC-ctcp-thuong-mai-dich-vu-tong-hop-cang-hai-phong.htm', 
+                callback=self.parse_bctc,
+                #meta={'playwright': True}
+            )
+        
 
     def parse(self, response):
         # 1. Kết nối SQLite và chuẩn bị bảng
@@ -85,7 +91,71 @@ class EventSpider(scrapy.Spider):
             yield e_item
 
         conn.close()
+    def parse_bctc(self, response):
+        # 1. Khởi tạo SQLite
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        table_name = f"{self.name}"
+        cursor.execute(f'''
+            CREATE TABLE IF NOT EXISTS {table_name} (
+                id TEXT PRIMARY KEY, mcp TEXT, date TEXT, summary TEXT, 
+                scraped_at TEXT, web_source TEXT, details_clean TEXT
+            )
+        ''')
 
+        # 2. Duyệt qua từng bài viết
+        rows = response.css('div.table-responsive table tr')
+        
+        for row in rows:
+            link_node = row.css('a.news-link')
+            title = link_node.css('::text').get().strip() if link_node else None
+            url = link_node.css('::attr(href)').get()
+            # Lấy datetime gốc từ thẻ time (thường là YYYY-MM-DD)
+            raw_date = row.css('td.col-date::text').get()
+            
+            if not title or not raw_date:
+                continue
+
+            summary = title.strip()
+            # Đảm bảo định dạng chỉ lấy YYYY-MM-DD nếu chuỗi dài hơn
+            iso_date = convert_to_isodate(raw_date)
+
+            # -------------------------------------------------------
+            # 3. KIỂM TRA ĐIỂM DỪNG (INCREMENTAL LOGIC)
+            # -------------------------------------------------------
+            event_id = f"{summary}_{iso_date}".replace(' ', '_').strip()[:150]
+            
+            cursor.execute(f"SELECT id FROM {table_name} WHERE id = ?", (event_id,))
+            if cursor.fetchone():
+                self.logger.info(f"===> GẶP TIN CŨ: [{summary}]. DỪNG QUÉT.")
+                break 
+
+
+            # 5. Yield Item
+            item = EventItem()
+            item['mcp'] = self.mcpcty
+            item['web_source'] = self.allowed_domains[1]
+            item['summary'] = summary
+            item['date'] = iso_date
+            
+            full_article_url = response.urljoin(url)
+            item['details_raw'] = f"{summary}\nURL: {full_article_url}"
+            item['scraped_at'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            
+            yield item
+
+        conn.close()    
+def convert_to_isodate(date_str):
+    if not date_str:
+        return None
+    try:
+        # Định dạng đầu vào dd/mm/yyyy
+        date_obj = datetime.strptime(date_str.strip(), '%d/%m/%Y')
+        # Trả về định dạng ISO YYYY-MM-DD
+        return date_obj.strftime('%Y-%m-%d')
+    except ValueError:
+        return None
+            
 def convert_date_to_iso8601(vietnam_date_str):
     if not vietnam_date_str:
         return None

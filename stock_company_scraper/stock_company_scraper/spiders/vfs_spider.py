@@ -7,7 +7,7 @@ class EventSpider(scrapy.Spider):
     name = 'event_vfs'
     mcpcty = 'VFS'
     allowed_domains = ['vfs.com.vn'] 
-    start_urls = ['https://www.vfs.com.vn/danh-muc-bao-cao/cong-bo-thong-tin'] 
+    start_urls = ['https://www.vfs.com.vn/danh-muc-bao-cao/cong-bo-thong-tin','https://www.vfs.com.vn/danh-muc-bao-cao/bao-cao-tai-chinh'] 
 
     def __init__(self, *args, **kwargs):
         super(EventSpider, self).__init__(*args, **kwargs)

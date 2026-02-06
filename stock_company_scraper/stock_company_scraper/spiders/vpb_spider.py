@@ -7,18 +7,23 @@ class EventSpider(scrapy.Spider):
     name = 'event_vpb'
     mcpcty = 'VPB'
     allowed_domains = ['vpbank.com.vn'] 
-    start_urls = ['https://www.vpbank.com.vn/quan-he-nha-dau-tu/cong-bo-thong-tin-khac'] 
+    #start_urls = ['https://www.vpbank.com.vn/quan-he-nha-dau-tu/cong-bo-thong-tin-khac'] 
+    async def start(self):
+        urls = [
+            ('https://www.vpbank.com.vn/quan-he-nha-dau-tu/cong-bo-thong-tin-khac', self.parse),
+            ('https://www.vpbank.com.vn/quan-he-nha-dau-tu/bao-cao-tai-chinh', self.parse_bctc),
+        ]
+        for url, callback in urls:
+            yield scrapy.Request(
+                url=url, 
+                callback=callback,
+                meta={'playwright': True}
+            )
 
     def __init__(self, *args, **kwargs):
         super(EventSpider, self).__init__(*args, **kwargs)
         self.db_path = 'stock_events.db'
 
-    def start_requests(self):
-        yield scrapy.Request(
-            url=self.start_urls[0],
-            callback=self.parse,
-            meta={"playwright": True}
-        )
 
     def parse(self, response):
         # 1. Khởi tạo SQLite
@@ -71,6 +76,38 @@ class EventSpider(scrapy.Spider):
 
         conn.close()
 
+    def parse_bctc(self, response):
+        # Chọn tất cả các thẻ báo cáo
+        cards = response.css('div.space-y-4 > div.p-4')
+
+        for card in cards:
+            title = card.css('h3.text-base::text').get()
+            
+            # Lấy toàn bộ text trong thẻ p chứa ngày công bố
+            raw_publish_date = card.css('p.text-gray-400::text').getall()
+            # Xử lý lấy phần ngày sau chữ "Ngày công bố: "
+            publish_date = "".join(raw_publish_date).strip()
+
+            # Trích xuất danh sách các tệp đính kèm
+            files = []
+            file_items = card.css('ul li a')
+            for f in file_items:
+                files.append({
+                    'file_name': f.css('::text').get().strip(),
+                    'file_url': response.urljoin(f.css('::attr(href)').get())
+                })
+
+            # 4. Yield Item
+            e_item = EventItem()
+            e_item['mcp'] = self.mcpcty
+            e_item['web_source'] = self.allowed_domains[0]
+            e_item['summary'] = title.strip() if title else None
+            e_item['date'] = datetime.strptime(publish_date, "%H:%M %d/%m/%Y").strftime("%Y-%m-%d")
+            
+            e_item['details_raw'] = f"Link: {files}"
+            e_item['scraped_at'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            
+            yield e_item
 def convert_date_to_iso8601(vietnam_date_str):
     if not vietnam_date_str:
         return None

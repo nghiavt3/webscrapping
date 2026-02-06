@@ -7,13 +7,15 @@ class EventSpider(scrapy.Spider):
     name = 'event_hpg'
     mcpcty = 'HPG'
     allowed_domains = ['hoaphat.com.vn'] 
-    start_urls = ['https://www.hoaphat.com.vn/quan-he-co-dong/cong-bo-thong-tin'] 
+    start_urls = ['https://www.hoaphat.com.vn/quan-he-co-dong/cong-bo-thong-tin',
+                'https://www.hoaphat.com.vn/quan-he-co-dong/bao-cao-tai-chinh',
+                'https://www.hoaphat.com.vn/quan-he-co-dong/dai-hoi-co-dong'] 
 
     def __init__(self, *args, **kwargs):
         super(EventSpider, self).__init__(*args, **kwargs)
         self.db_path = 'stock_events.db'
 
-    def parse(self, response):
+    async def parse(self, response):
         # 1. Kết nối SQLite và chuẩn bị bảng
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
@@ -43,8 +45,7 @@ class EventSpider(scrapy.Spider):
             # 3. KIỂM TRA ĐIỂM DỪNG (INCREMENTAL LOGIC)
             # -------------------------------------------------------
             # Ưu tiên dùng data_id của Hòa Phát làm khóa chính
-            uid = data_id if data_id else f"{title}_{iso_date}"
-            event_id = uid.replace(' ', '_').strip()[:150]
+            event_id = f"{title}_{iso_date if iso_date else 'NODATE'}".replace(' ', '_').strip()[:150]
             
             cursor.execute(f"SELECT id FROM {table_name} WHERE id = ?", (event_id,))
             if cursor.fetchone():

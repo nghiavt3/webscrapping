@@ -7,13 +7,15 @@ class EventSpider(scrapy.Spider):
     name = 'event_klb'
     mcpcty = 'KLB'
     allowed_domains = ['kienlongbank.com'] 
-    start_urls = ['https://kienlongbank.com/cong-bo-thong-tin'] 
+    start_urls = ['https://kienlongbank.com/cong-bo-thong-tin',
+                  'https://kienlongbank.com/bao-cao-tai-chinh',
+                  'https://kienlongbank.com/dai-hoi-dong-co-dong'] 
 
     def __init__(self, *args, **kwargs):
         super(EventSpider, self).__init__(*args, **kwargs)
         self.db_path = 'stock_events.db'
 
-    def parse(self, response):
+    async def parse(self, response):
         # 1. Kết nối SQLite
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()

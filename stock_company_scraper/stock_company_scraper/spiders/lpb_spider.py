@@ -13,14 +13,21 @@ class EventSpider(scrapy.Spider):
         super(EventSpider, self).__init__(*args, **kwargs)
         self.db_path = 'stock_events.db'
 
-    def start_requests(self):
-        yield scrapy.Request(
-            url=self.start_urls[0],
-            callback=self.parse,
-            meta={'playwright': True}
-        )
+    async def start(self):
+        urls = [
+            ('https://lpbank.com.vn/nha-dau-tu/cong-bo-thong-tin', self.parse),
+            ('https://lpbank.com.vn/nha-dau-tu/bao-cao', self.parse),
+            ('https://lpbank.com.vn/nha-dau-tu/dai-hoi-co-dong', self.parse),
+             
+        ]
+        for url, callback in urls:
+            yield scrapy.Request(
+                url=url, 
+                callback=callback,
+                meta={'playwright': True}
+            )
     
-    def parse(self, response):
+    async def parse(self, response):
         # 1. Kết nối SQLite
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()

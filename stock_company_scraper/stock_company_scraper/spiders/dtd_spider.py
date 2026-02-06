@@ -7,7 +7,9 @@ class EventSpider(scrapy.Spider):
     name = 'event_dtd'
     mcpcty = 'DTD'
     allowed_domains = ['thanhdathanam.vn'] 
-    start_urls = ['https://thanhdathanam.vn/quan-he-co-dong/thong-tin-cong-bo/'] 
+    start_urls = ['https://thanhdathanam.vn/quan-he-co-dong/thong-tin-cong-bo/',
+                  'https://thanhdathanam.vn/quan-he-co-dong/thong-tin-tai-chinh/'
+                  ] 
 
     def __init__(self, *args, **kwargs):
         super(EventSpider, self).__init__(*args, **kwargs)

@@ -8,7 +8,10 @@ class EventSpider(scrapy.Spider):
     name = 'event_pnj'
     mcpcty = 'PNJ'
     allowed_domains = ['pnj.com.vn'] 
-    start_urls = ['https://www.pnj.com.vn/quan-he-co-dong/thong-bao/'] 
+    start_urls = [
+        'https://www.pnj.com.vn/quan-he-co-dong/thong-bao/',
+        'https://www.pnj.com.vn/quan-he-co-dong/bao-cao-tai-chinh/'
+                  ] 
 
     def __init__(self, *args, **kwargs):
         super(EventSpider, self).__init__(*args, **kwargs)
@@ -40,8 +43,8 @@ class EventSpider(scrapy.Spider):
             full_text = "".join(sel.css('::text').getall()).strip()
             
             # Chỉ xử lý các dòng có dấu + (định dạng thông báo của PNJ)
-            if not full_text or '+' not in full_text:
-                continue
+            # if not full_text or '+' not in full_text:
+            #     continue
 
             # Trích xuất ngày tháng bằng Regex
             date_match = re.search(r'(\d{2}/\d{2}/\d{4})', full_text)

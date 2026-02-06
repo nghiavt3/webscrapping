@@ -7,13 +7,13 @@ class EventSpider(scrapy.Spider):
     name = 'event_shi'
     mcpcty = 'SHI'
     allowed_domains = ['sonha.com.vn'] 
-    start_urls = ['https://www.sonha.com.vn/thong-tin-cong-bo/'] 
+    start_urls = ['https://www.sonha.com.vn/thong-tin-cong-bo/','https://www.sonha.com.vn/bao-cao-tai-chinh/'] 
 
     def __init__(self, *args, **kwargs):
         super(EventSpider, self).__init__(*args, **kwargs)
         self.db_path = 'stock_events.db'
 
-    def start_requests(self):
+    async def start(self):
         for url in self.start_urls:
             yield scrapy.Request(
                 url=url,
@@ -22,7 +22,7 @@ class EventSpider(scrapy.Spider):
                 meta={'playwright': True}
             )
 
-    def parse(self, response):
+    async def parse(self, response):
         # 1. Khởi tạo SQLite
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()

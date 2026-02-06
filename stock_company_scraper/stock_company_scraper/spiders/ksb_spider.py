@@ -18,7 +18,7 @@ class EventSpider(scrapy.Spider):
         super(EventSpider, self).__init__(*args, **kwargs)
         self.db_path = 'stock_events.db'
 
-    def start_requests(self):
+    async def start(self):
         yield scrapy.Request(
             url=self.start_urls[0],
             callback=self.parse,

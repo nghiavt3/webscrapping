@@ -15,7 +15,7 @@ class EventSpider(scrapy.Spider):
         # Đường dẫn file db đồng bộ với dự án
         self.db_path = 'stock_events.db'
 
-    def start_requests(self):
+    async def start(self):
         for url in self.start_urls:
             yield scrapy.Request(
                 url=url,

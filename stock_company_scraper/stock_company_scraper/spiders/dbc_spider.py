@@ -12,7 +12,7 @@ class EventSpider(scrapy.Spider):
         super(EventSpider, self).__init__(*args, **kwargs)
         self.db_path = 'stock_events.db'
 
-    def start_requests(self):
+    async def start(self):
         urls = [
             ('http://dabaco.com.vn/vn/thong-tin-chung.html', self.parse_generic),
              ('http://dabaco.com.vn/vn/thong-tin-tai-chinh.html', self.parse_generic),
@@ -71,10 +71,32 @@ class EventSpider(scrapy.Spider):
             e_item['date'] = iso_date
             e_item['details_raw'] = f"{summary}\nLink: {absolute_url} \n"
             e_item['scraped_at'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-            
-            yield e_item
+            if absolute_url  and "báo cáo tài chính" in summary.lower():
+                yield scrapy.Request(
+                    url=absolute_url,
+                    callback=self.parse_detail,
+                    meta={'item': e_item}  # Chuyển dữ liệu sang hàm tiếp theo
+                )
+            else:
+                yield e_item   
 
         conn.close()
+    
+    def parse_detail(self, response):
+        # Nhận lại item từ trang danh sách gửi qua meta
+        item = response.meta['item']
+        
+        # 1. Trích xuất tất cả các link PDF trong khối chi tiết
+        # Chúng ta tìm các thẻ <a> nằm trong .blog-details-col có href chứa ".pdf"
+        links = response.css('p a::attr(href)').getall()
+
+        # Nếu bạn muốn lấy cả Text và URL để biết link đó là báo cáo gì:
+        for linka in response.css('p a'):
+            url = linka.css('::attr(href)').get()
+            # Lấy toàn bộ text bên trong các thẻ span, i (nếu có)
+            title = "".join(linka.css('::text, span::text, i::text').getall()).strip()
+            item['details_raw'] = f"{item['details_raw']}\n Tiêu đề:{title}\nLink:{response.urljoin(url)}"
+        yield item
 
 def convert_date_to_iso8601(vietnam_date_str):
     if not vietnam_date_str:

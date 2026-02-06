@@ -13,7 +13,7 @@ class EventSpider(scrapy.Spider):
         super(EventSpider, self).__init__(*args, **kwargs)
         self.db_path = 'stock_events.db'
 
-    def parse(self, response):
+    async def parse(self, response):
         # 1. Khởi tạo SQLite
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
@@ -72,6 +72,15 @@ class EventSpider(scrapy.Spider):
             yield e_item
 
         conn.close()
+        
+        value = response.xpath('//select/option[2]/@value').get()
+        url = f'https://ticco.com.vn/quan-he-co-dong/cong-bo-thong-tin/?yearID={value}'
+        if url != response.url :
+            yield scrapy.Request(
+                    url=url, 
+                    callback=self.parse,
+                    #meta={'playwright': True}
+                )
 
 def convert_date_to_iso8601(vietnam_date_str):
     if not vietnam_date_str:

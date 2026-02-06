@@ -24,8 +24,11 @@ class StockCompanyScraperPipeline:
 class SQLiteStoragePipeline:
     def __init__(self):
         # 1. Cấu hình Telegram (Sử dụng Token và ID của bạn)
-        self.tele_token = "8586036700:AAFWRMSt985_aoI8U5LheWIatJSymCW8biI"
-        self.tele_chat_id = "-1003249872525"
+        #self.tele_token = "8586036700:AAFWRMSt985_aoI8U5LheWIatJSymCW8biI" # bot api token thao_bot
+       # self.tele_chat_id = "-1003249872525" # thaochanel
+        
+        self.tele_token = "8431203903:AAE4dwx8GX_OCJiBKfiIqgwNZsF9YFK5Ewg" # bot api token Stock_csv_bot
+        self.tele_chat_id = "-1002915975059" #chanel #megainforcvs chanel
         
         # 2. Cấu hình Database
         self.db_name = 'stock_events.db'

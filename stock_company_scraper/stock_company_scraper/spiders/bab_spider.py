@@ -12,11 +12,15 @@ class EventSpider(scrapy.Spider):
         super(EventSpider, self).__init__(*args, **kwargs)
         self.db_path = 'stock_events.db'
     
-    def start_requests(self):
+    async def start(self):
         year = datetime.now().year
         urls = [
             (f"https://www.baca-bank.vn/SitePages/website/quan-he-co-dong.aspx?t=C%C3%B4ng%20b%E1%BB%91%20th%C3%B4ng%20tin&y={year}&s=QHCD&ac=QUAN%20H%E1%BB%86%20C%E1%BB%94%20%C4%90%C3%94NG", self.parse_generic),
-            
+           # (f"https://www.baca-bank.vn/SitePages/website/quan-he-co-dong.aspx?ac=QUAN%20H%E1%BB%86%20C%E1%BB%94%20%C4%90%C3%94NG&t=C%C3%B4ng%20b%E1%BB%91%20th%C3%B4ng%20tin&y=2026&skh=&ty=&nbh=&s=QHCD&Page=2", self.parse_generic),
+
+            (f"https://www.baca-bank.vn/SitePages/website/quan-he-co-dong.aspx?t=B%C3%A1o%20c%C3%A1o%20t%C3%A0i%20ch%C3%ADnh&y={year}&s=QHCD&ac=QUAN%20H%E1%BB%86%20C%E1%BB%94%20%C4%90%C3%94NG", self.parse_generic),
+                            
+            #(f"https://www.baca-bank.vn/SitePages/website/quan-he-co-dong.aspx?ac=QUAN%20H%E1%BB%86%20C%E1%BB%94%20%C4%90%C3%94NG&t=B%C3%A1o%20c%C3%A1o%20t%C3%A0i%20ch%C3%ADnh&y=2025&skh=&ty=&nbh=&s=QHCD&Page=2", self.parse_generic),
         ]
         for url, callback in urls:
             yield scrapy.Request(
@@ -55,15 +59,15 @@ class EventSpider(scrapy.Spider):
             # -------------------------------------------------------
             # 3. KIỂM TRA ĐIỂM DỪNG (INCREMENTAL LOGIC)
             # -------------------------------------------------------
-            if iso_date :
-                event_id = f"{summary}_{iso_date}".replace(' ', '_').strip()[:150]
-            else :
-                event_id = f"{summary}_NODATE".replace(' ', '_').strip()[:150]
+            # if iso_date :
+            #     event_id = f"{summary}_{iso_date}".replace(' ', '_').strip()[:150]
+            # else :
+            #     event_id = f"{summary}_NODATE".replace(' ', '_').strip()[:150]
             
-            cursor.execute(f"SELECT id FROM {table_name} WHERE id = ?", (event_id,))
-            if cursor.fetchone():
-                self.logger.info(f"===> GẶP TIN CŨ: [{summary}]. DỪNG QUÉT CHUYÊN MỤC.")
-                break 
+            # cursor.execute(f"SELECT id FROM {table_name} WHERE id = ?", (event_id,))
+            # if cursor.fetchone():
+            #     self.logger.info(f"===> GẶP TIN CŨ: [{summary}]. DỪNG QUÉT CHUYÊN MỤC.")
+            #     break 
 
             # 4. Yield Item
             e_item = EventItem()
@@ -75,8 +79,12 @@ class EventSpider(scrapy.Spider):
             e_item['scraped_at'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
             
             yield e_item
-
         conn.close()
+
+        next_page = response.css('div.paging li.active + li a::attr(href)').get()
+        if next_page and 'javascript' not in next_page:
+            yield response.follow(next_page, callback=self.parse_generic)
+        
 
 def convert_date_to_iso8601(vietnam_date_str):
     if not vietnam_date_str:

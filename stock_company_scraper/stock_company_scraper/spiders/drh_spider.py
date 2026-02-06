@@ -9,6 +9,26 @@ class EventSpider(scrapy.Spider):
     allowed_domains = ['drh.vn'] 
     start_urls = ['https://drh.vn/quan-he-co-dong.html'] 
 
+    async def start(self):
+        """Gửi request đến API với header mô phỏng trình duyệt."""
+        
+        yield scrapy.Request(
+            url='https://drh.vn/quan-he-co-dong/page-1.html?_=1769227600255',
+            headers={
+            # Header quan trọng để server nhận diện đây là cuộc gọi XHR
+            'X-Requested-With': 'XMLHttpRequest',
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+        },
+            callback=self.parse
+        )
+
+        yield scrapy.Request(
+            url=self.start_urls[0],
+            callback=self.parse
+        )
+
+
+
     def __init__(self, *args, **kwargs):
         super(EventSpider, self).__init__(*args, **kwargs)
         self.db_path = 'stock_events.db'
@@ -46,12 +66,12 @@ class EventSpider(scrapy.Spider):
             # -------------------------------------------------------
             # 3. KIỂM TRA ĐIỂM DỪNG (INCREMENTAL LOGIC)
             # -------------------------------------------------------
-            event_id = f"{cleaned_content}_{iso_date}".replace(' ', '_').strip()[:150]
+            # event_id = f"{cleaned_content}_{iso_date}".replace(' ', '_').strip()[:150]
             
-            cursor.execute(f"SELECT id FROM {table_name} WHERE id = ?", (event_id,))
-            if cursor.fetchone():
-                self.logger.info(f"===> GẶP TIN CŨ: [{cleaned_content}]. DỪNG QUÉT.")
-                break 
+            # cursor.execute(f"SELECT id FROM {table_name} WHERE id = ?", (event_id,))
+            # if cursor.fetchone():
+            #     self.logger.info(f"===> GẶP TIN CŨ: [{cleaned_content}]. DỪNG QUÉT.")
+            #     break 
 
             # 4. Yield Item cho Pipeline
             e_item = EventItem()

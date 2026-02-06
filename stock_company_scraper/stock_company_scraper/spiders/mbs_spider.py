@@ -7,20 +7,23 @@ class EventSpider(scrapy.Spider):
     name = 'event_mbs'
     mcpcty = 'MBS'
     allowed_domains = ['mbs.com.vn'] 
-    start_urls = ['https://www.mbs.com.vn/tin-co-dong/'] 
+    start_urls = ['https://www.mbs.com.vn/tin-co-dong/',
+                  'https://www.mbs.com.vn/bao-cao-tai-chinh/',
+                  'https://www.mbs.com.vn/cong-bo-thong-tin/'] 
 
     def __init__(self, *args, **kwargs):
         super(EventSpider, self).__init__(*args, **kwargs)
         self.db_path = 'stock_events.db'
 
-    def start_requests(self):
-        yield scrapy.Request(
-            url=self.start_urls[0],
-            callback=self.parse,
-            meta={'playwright': True}
-        )
+    async def start(self):
+        for  url in self.start_urls:
+            yield scrapy.Request(
+                url=url,
+                callback=self.parse,
+                meta={'playwright': True}
+            )
         
-    def parse(self, response):
+    async def parse(self, response):
         # 1. Kết nối SQLite và khởi tạo bảng nếu chưa có
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()

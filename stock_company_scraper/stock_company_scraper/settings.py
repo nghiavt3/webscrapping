@@ -22,7 +22,8 @@ USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTM
 # Bạn có thể tìm User-Agent mới nhất bằng cách gõ "my user agent" trên Google
 # Obey robots.txt rules
 PLAYWRIGHT_LAUNCH_OPTIONS = {
-    "headless": True,  # Có thể đặt False để debug xem trình duyệt chạy gì
+    "headless": True,  # ĐỔI THÀNH FALSE ĐỂ QUAN SÁT
+    "args": ["--disable-blink-features=AutomationControlled"], # Giấu dấu vết bot
 }
 
 PLAYWRIGHT_CONTEXT_ARGS = {
@@ -34,7 +35,7 @@ ROBOTSTXT_OBEY = False
 # Concurrency and throttling settings
 #CONCURRENT_REQUESTS = 16
 CONCURRENT_REQUESTS_PER_DOMAIN = 1
-DOWNLOAD_DELAY = 1
+DOWNLOAD_DELAY = 3
 
 #PLAYWRIGHT_PROCESS_REQUEST_HEADERS = None
 # Kích hoạt Playwright Downloader Middleware
@@ -42,6 +43,7 @@ DOWNLOAD_HANDLERS = {
     "http": "scrapy_playwright.handler.ScrapyPlaywrightDownloadHandler",
     "https": "scrapy_playwright.handler.ScrapyPlaywrightDownloadHandler",
 }
+ASYNCIO_EVENT_LOOP_POLICY = "asyncio.WindowsSelectorEventLoopPolicy" # Chỉ dành cho Windows
 PLAYWRIGHT_DEFAULT_NAVIGATION_TIMEOUT = 60000
 # Tăng timeout để Playwright có thời gian khởi động trình duyệt
 DOWNLOAD_TIMEOUT = 180
@@ -50,7 +52,7 @@ DOWNLOAD_TIMEOUT = 180
 CONCURRENT_REQUESTS = 16 
 CONCURRENT_REQUESTS_PER_DOMAIN = 8
 # Disable cookies (enabled by default)
-#COOKIES_ENABLED = False
+COOKIES_ENABLED = True
 # Tăng thời gian chờ cho quá trình dọn dẹp Playwright/AsyncIO (từ 5 giây lên 10 giây hoặc hơn)
 # Điều này cho phép các tác vụ đang chờ (pending tasks) có thời gian hoàn tất.
 PLAYWRIGHT_CLOSING_TIMEOUT = 10
@@ -158,7 +160,7 @@ FEED_EXPORT_ENCODING = "utf-8"
 
 # Buộc Playwright đóng trình duyệt một cách nhẹ nhàng hơn
 PLAYWRIGHT_ABORT_REQUEST_TIMEOUT = 1000  # ms
-
+PLAYWRIGHT_ABORT_REQUEST = lambda req: req.resource_type in ["image", "media", "font"]
 # Sử dụng Policy Event Loop của Windows (khắc phục lỗi SelectorEventLoop)
 import asyncio
 import sys

@@ -7,7 +7,9 @@ class EventSpider(scrapy.Spider):
     name = 'event_yeg'
     mcpcty = 'YEG'
     allowed_domains = ['yeah1group.com'] 
-    start_urls = ['https://yeah1group.com/investor-relation/announcements'] 
+    start_urls = ['https://yeah1group.com/investor-relation/announcements',
+                  'https://yeah1group.com/investor-relation/financial-statements',
+                  'https://yeah1group.com/investor-relation/shareholders-meeting'] 
 
     def __init__(self, *args, **kwargs):
         super(EventSpider, self).__init__(*args, **kwargs)

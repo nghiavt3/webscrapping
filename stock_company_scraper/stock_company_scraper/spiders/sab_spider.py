@@ -2,12 +2,19 @@ import scrapy
 import sqlite3
 from stock_company_scraper.items import EventItem
 from datetime import datetime
-
+import re
 class EventSpider(scrapy.Spider):
     name = 'event_sab'
     mcpcty = 'SAB'
     allowed_domains = ['sabeco.com.vn'] 
-    start_urls = ['https://www.sabeco.com.vn/trang-chu/tin-co-dong'] 
+    current_year = datetime.now().year
+    last_year = current_year -1
+    start_urls = [
+        f'https://www.sabeco.com.vn/co-dong/cong-bo-thong-tin/{current_year}',
+        f'https://www.sabeco.com.vn/co-dong/bao-cao-tai-chinh/{current_year}-2'
+        f'https://www.sabeco.com.vn/co-dong/cong-bo-thong-tin/{last_year}',
+        f'https://www.sabeco.com.vn/co-dong/bao-cao-tai-chinh/{last_year}-2'
+        ] 
 
     def __init__(self, *args, **kwargs):
         super(EventSpider, self).__init__(*args, **kwargs)
@@ -18,6 +25,7 @@ class EventSpider(scrapy.Spider):
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
         table_name = f"{self.name}"
+        #cursor.execute(f'''DROP TABLE IF EXISTS {table_name}''')
         cursor.execute(f'''
             CREATE TABLE IF NOT EXISTS {table_name} (
                 id TEXT PRIMARY KEY, mcp TEXT, date TEXT, summary TEXT, 
@@ -26,19 +34,22 @@ class EventSpider(scrapy.Spider):
         ''')
 
         # 2. Duyệt qua từng bài viết
-        for article in response.css('div.newslist article'):
-            title = article.css('h3.newsname a::text').get()
-            raw_date = article.css('time::text').get()
-            link = article.css('h3.newsname a::attr(href)').get()
+        items = response.css('div.financy-report ul li')
+        for item in items:
+            title = item.css('a::text').get()
+            full_text = "".join(item.css('::text').getall())
+            date_match = re.search(r'\((\d{1,2}/\d{1,2}/\d{4})\)', full_text)
+            date = date_match.group(1) if date_match else None
+            link = item.css('a::attr(href)').get()
             
             if not title:
                 continue
 
             summary = title.strip()
             # Làm sạch chuỗi ngày tháng (Sabeco thường để định dạng DD/MM/YYYY)
-            clean_date_str = raw_date.strip() if raw_date else ""
-            iso_date = convert_date_to_iso8601(clean_date_str)
-            full_url = response.urljoin(link)
+            
+            iso_date = convert_date_to_iso8601(date)
+            full_url = response.urljoin(link).replace(" ", "%20")
 
             # -------------------------------------------------------
             # 3. KIỂM TRA ĐIỂM DỪNG (INCREMENTAL LOGIC)

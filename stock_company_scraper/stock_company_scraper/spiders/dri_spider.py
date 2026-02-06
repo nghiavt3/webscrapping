@@ -7,7 +7,12 @@ class EventSpider(scrapy.Spider):
     name = 'event_dri'
     mcpcty = 'DRI'
     allowed_domains = ['dri.com.vn'] 
-    start_urls = ['https://dri.com.vn/categories/thong-bao-64.html'] 
+    start_urls = ['https://dri.com.vn/categories/thong-bao-64.html',
+                  'https://dri.com.vn/categories/tin-hoat-dong-dhdcd-127.html',
+                  'https://dri.com.vn/categories/thong-tin-tai-chinh-134.html',
+                  'https://dri.com.vn/categories/dai-hoi-dong-cd-thuong-nien-149.html'
+                  ] 
+
 
     def __init__(self, *args, **kwargs):
         super(EventSpider, self).__init__(*args, **kwargs)

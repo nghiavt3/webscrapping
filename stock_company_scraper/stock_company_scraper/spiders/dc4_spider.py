@@ -18,7 +18,7 @@ class EventSpider(scrapy.Spider):
         super(EventSpider, self).__init__(*args, **kwargs)
         self.db_path = 'stock_events.db'
 
-    def start_requests(self):
+    async def start(self):
         """Gửi request đến API với header mô phỏng trình duyệt."""
         for url in self.start_urls:
             yield scrapy.Request(
@@ -56,7 +56,7 @@ class EventSpider(scrapy.Spider):
         for item in announcements:
             title = item.get('Title', '').strip()
             date_pub = item.get('DatePub', '')
-            raw_url = item.get('URL', '')
+            raw_url = item.get('URL', '').replace('\\', '/').replace(' ', '%20')
             # Làm sạch URL (thay dấu gạch chéo ngược)
             final_url = raw_url.replace('\\', '/') if raw_url else ""
 

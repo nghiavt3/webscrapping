@@ -7,18 +7,26 @@ class EventSpider(scrapy.Spider):
     name = 'event_fir'
     mcpcty = 'FIR'
     allowed_domains = ['fir.vn'] 
-    start_urls = ['https://fir.vn/vn/quan-he-co-dong/cong-bo-thong-tin/'] 
+    start_urls = ['https://fir.vn/vn/quan-he-co-dong/cong-bo-thong-tin/',
+                  'https://fir.vn/vn/quan-he-co-dong/bao-cao-tai-chinh/',
+                  'https://fir.vn/vn/quan-he-co-dong/dai-hoi-co-dong/'] 
 
     def __init__(self, *args, **kwargs):
         super(EventSpider, self).__init__(*args, **kwargs)
         self.db_path = 'stock_events.db'
 
-    def start_requests(self):
+    async def start(self):
         for url in self.start_urls:
             yield scrapy.Request(
                 url=url,
                 callback=self.parse,
-                meta={"playwright": True}
+                meta={
+                "playwright": True,
+                "playwright_context": f"context_{url}", # Tạo context riêng cho mỗi link
+                "playwright_context_kwargs": {
+                    "ignore_https_errors": True,
+                },
+            }
             )
 
     def parse(self, response):

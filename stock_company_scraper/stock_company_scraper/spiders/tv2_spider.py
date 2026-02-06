@@ -13,7 +13,7 @@ class EventSpider(scrapy.Spider):
         super(EventSpider, self).__init__(*args, **kwargs)
         self.db_path = 'stock_events.db'
 
-    def start_requests(self):
+    async def start(self):
         for url in self.start_urls:
             yield scrapy.Request(
                 url=url,
@@ -22,7 +22,7 @@ class EventSpider(scrapy.Spider):
                 meta={'playwright': True}
             )
         
-    def parse(self, response):
+    async def parse(self, response):
         # 1. Khởi tạo SQLite
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
@@ -61,12 +61,12 @@ class EventSpider(scrapy.Spider):
             # -------------------------------------------------------
             # 3. KIỂM TRA ĐIỂM DỪNG (INCREMENTAL LOGIC)
             # -------------------------------------------------------
-            event_id = f"{summary}_{iso_date}".replace(' ', '_').strip()[:150]
+            # event_id = f"{summary}_{iso_date}".replace(' ', '_').strip()[:150]
             
-            cursor.execute(f"SELECT id FROM {table_name} WHERE id = ?", (event_id,))
-            if cursor.fetchone():
-                self.logger.info(f"===> GẶP TIN CŨ: [{summary}]. DỪNG QUÉT.")
-                break 
+            # cursor.execute(f"SELECT id FROM {table_name} WHERE id = ?", (event_id,))
+            # if cursor.fetchone():
+            #     self.logger.info(f"===> GẶP TIN CŨ: [{summary}]. DỪNG QUÉT.")
+            #     break 
 
             # 4. Yield Item
             e_item = EventItem()

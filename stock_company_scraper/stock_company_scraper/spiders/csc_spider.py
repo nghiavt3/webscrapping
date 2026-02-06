@@ -7,7 +7,9 @@ class EventSpider(scrapy.Spider):
     name = 'event_csc'
     mcpcty = 'CSC'
     allowed_domains = ['cotanagroup.vn'] 
-    start_urls = ['https://www.cotanagroup.vn/thong-bao-cua-hdqt/'] 
+    start_urls = ['https://www.cotanagroup.vn/thong-bao-cua-hdqt/',
+                  'https://www.cotanagroup.vn/bao-cao-tai-chinh/',
+                  'https://www.cotanagroup.vn/bien-ban/'] 
 
     def __init__(self, *args, **kwargs):
         super(EventSpider, self).__init__(*args, **kwargs)
@@ -17,8 +19,8 @@ class EventSpider(scrapy.Spider):
         # 1. Kết nối SQLite và chuẩn bị bảng
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
-        
         table_name = f"{self.name}"
+        #cursor.execute(f'''DROP TABLE IF EXISTS {table_name}''')
         cursor.execute(f'''
             CREATE TABLE IF NOT EXISTS {table_name} (
                 id TEXT PRIMARY KEY,
@@ -51,7 +53,7 @@ class EventSpider(scrapy.Spider):
             # 3. KIỂM TRA ĐIỂM DỪNG (INCREMENTAL LOGIC)
             # -------------------------------------------------------
             # Tạo ID duy nhất từ tên tài liệu
-            event_id = f"{cleaned_title}".replace(' ', '_').strip()[:150]
+            event_id = f"{cleaned_title}_NODATE".replace(' ', '_').strip()[:150]
             
             cursor.execute(f"SELECT id FROM {table_name} WHERE id = ?", (event_id,))
             if cursor.fetchone():
@@ -63,7 +65,7 @@ class EventSpider(scrapy.Spider):
             e_item['mcp'] = self.mcpcty
             e_item['web_source'] = self.allowed_domains[0]
             e_item['summary'] = cleaned_title
-            e_item['date'] = scraped_date
+            e_item['date'] = None
             e_item['details_raw'] = f"Tài liệu: {cleaned_title}\nLink: {full_url}\nFile: {ten_file_tai_ve}"
             e_item['scraped_at'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
             

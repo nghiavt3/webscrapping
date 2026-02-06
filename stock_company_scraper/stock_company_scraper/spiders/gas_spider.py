@@ -12,10 +12,10 @@ class EventSpider(scrapy.Spider):
         super(EventSpider, self).__init__(*args, **kwargs)
         self.db_path = 'stock_events.db'
 
-    def start_requests(self):
+    async def start(self):
         urls = [
             ('https://www.pvgas.com.vn/quan-he-co-%C4%91ong', self.parse_generic),
-            #('https://bsr.com.vn/cong-bo-thong-tin-khac', self.parse_generic),
+            ('https://www.pvgas.com.vn/quan-he-co-%C4%91ong/tai-lieu-co-%C4%91ong', self.parse_bctc),
             
         ]
         for url, callback in urls:
@@ -31,7 +31,7 @@ class EventSpider(scrapy.Spider):
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
         table_name = f"{self.name}"
-        #cursor.execute(f'''DROP TABLE IF EXISTS {table_name}''')
+       # cursor.execute(f'''DROP TABLE IF EXISTS {table_name}''')
         cursor.execute(f'''
             CREATE TABLE IF NOT EXISTS {table_name} (
                 id TEXT PRIMARY KEY, mcp TEXT, date TEXT, summary TEXT, 
@@ -89,6 +89,59 @@ class EventSpider(scrapy.Spider):
             yield e_item
 
         conn.close()
+        next_page = response.css('a[rel="next"]::attr(href)').get()
+        if next_page:
+            # yield một Request mới đến trang tiếp theo và lặp lại hàm parse
+            yield response.follow(next_page, callback=self.parse_generic)
+
+    def parse_bctc(self, response):
+        """Hàm parse dùng chung cho các chuyên mục của SeABank"""
+        # 1. Khởi tạo SQLite
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        table_name = f"{self.name}"
+        #cursor.execute(f'''DROP TABLE IF EXISTS {table_name}''')
+        cursor.execute(f'''
+            CREATE TABLE IF NOT EXISTS {table_name} (
+                id TEXT PRIMARY KEY, mcp TEXT, date TEXT, summary TEXT, 
+                scraped_at TEXT, web_source TEXT, details_clean TEXT
+            )
+        ''')
+
+        # Lấy tất cả các khối bài viết
+        articles = response.css('div.edn__articleListWrapper article')
+
+        for art in articles:
+            title = art.css('div.col-sm-9 a::text').get()
+            raw_date = art.css('div.col-sm-2 time::text').get()
+            download_path = art.css('a.edn_documentlink::attr(href)').get()
+            summary = title.strip()
+            iso_date = parse_vn_date_simple(raw_date)
+            absolute_url = response.urljoin(download_path) if download_path else None
+
+            # -------------------------------------------------------
+            # 3. KIỂM TRA ĐIỂM DỪNG (INCREMENTAL LOGIC)
+            # -------------------------------------------------------
+            event_id = f"{summary}_{iso_date}".replace(' ', '_').strip()[:150]
+            
+            cursor.execute(f"SELECT id FROM {table_name} WHERE id = ?", (event_id,))
+            if cursor.fetchone():
+                self.logger.info(f"===> GẶP TIN CŨ: [{summary}]. DỪNG QUÉT CHUYÊN MỤC.")
+                break 
+
+            # 4. Yield Item
+            e_item = EventItem()
+            e_item['mcp'] = self.mcpcty
+            e_item['web_source'] = self.allowed_domains[0]
+            e_item['summary'] = summary
+            e_item['date'] = iso_date
+            e_item['details_raw'] = f"{summary}\nLink: {absolute_url}"
+            e_item['scraped_at'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            
+            yield e_item
+
+        conn.close()
+
 import unicodedata
 def parse_vn_date_simple(date_str):
     if not date_str:
@@ -114,7 +167,7 @@ def parse_vn_date_simple(date_str):
         year = parts[4]
 
     # 3. Bảng tra cứu tháng
-    month_map = {
+    month_map = { "Giêng":"01",
         "Một": "01", "Hai": "02", "Ba": "03", "Tư": "04",
         "Năm": "05", "Sáu": "06", "Bảy": "07", "Tám": "08",
         "Chín": "09", "Mười": "10", "Mười Một": "11", "Mười Hai": "12",

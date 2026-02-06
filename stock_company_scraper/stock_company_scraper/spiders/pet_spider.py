@@ -3,19 +3,22 @@ import sqlite3
 import json
 from stock_company_scraper.items import EventItem
 from datetime import datetime
-
+from urllib.parse import quote, unquote, urljoin
+import re
 class EventSpider(scrapy.Spider):
     name = 'event_pet'
     mcpcty = 'PET'
     allowed_domains = ['gateway.fpts.com.vn'] 
-    start_urls = ['https://gateway.fpts.com.vn/news/api/gateway/v1/mobile/list?folder=86&code=PET&pageSize=8&selectedPage=1&cbtt=1&from=01-01-1970&to=01-01-3000&newsType=1',
-                  'https://gateway.fpts.com.vn/news/api/gateway/v1/mobile/list?folder=86&code=PET&pageSize=8&selectedPage=1&cbtt=0&from=01-01-1970&to=01-01-3000&newsType=1'] 
+    start_urls = [
+        'https://gateway.fpts.com.vn/news/api/gateway/v1/mobile/list?folder=86&code=PET&pageSize=8&selectedPage=1&cbtt=1&from=01-01-1970&to=01-01-3000&newsType=1',
+                  'https://gateway.fpts.com.vn/news/api/gateway/v1/mobile/list?folder=86&code=PET&pageSize=8&selectedPage=1&cbtt=0&from=01-01-1970&to=01-01-3000&newsType=1'
+                   ] 
 
     def __init__(self, *args, **kwargs):
         super(EventSpider, self).__init__(*args, **kwargs)
         self.db_path = 'stock_events.db'
 
-    def start_requests(self):
+    async def start(self):
         """Gửi request đến API với header mô phỏng trình duyệt."""
         for url in self.start_urls:
             yield scrapy.Request(
@@ -26,12 +29,13 @@ class EventSpider(scrapy.Spider):
                     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
                 }
             )
-
-    def parse(self, response):
+    
+    async def parse(self, response):
         # 1. Kết nối SQLite
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
         table_name = f"{self.name}"
+        #cursor.execute(f'''DROP TABLE IF EXISTS {table_name}''')
         cursor.execute(f'''
             CREATE TABLE IF NOT EXISTS {table_name} (
                 id TEXT PRIMARY KEY, mcp TEXT, date TEXT, summary TEXT, 
@@ -54,7 +58,7 @@ class EventSpider(scrapy.Spider):
         for item in news_items:
             title = item.get('Title')
             pub_date = item.get('DatePub')
-            url = item.get('URL')
+            url = item.get('URL').replace('\\', '/').replace(' ', '%20')
 
             if not title:
                 continue

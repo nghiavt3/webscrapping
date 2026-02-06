@@ -7,7 +7,11 @@ class EventSpider(scrapy.Spider):
     name = 'event_vea'
     mcpcty = 'VEA'
     allowed_domains = ['veamcorp.com'] 
-    start_urls = ['http://veamcorp.com/quan-he-co-dong/cong-bo-thong-tin-114.html'] 
+    start_urls = [
+                'http://veamcorp.com/quan-he-co-dong/cong-bo-thong-tin-114.html',
+                'http://veamcorp.com/tin-tuc/bao-cao-tai-chinh-113.html',
+                'http://veamcorp.com/tin-tuc/dai-hoi-dong-co-dong-118.html'
+                  ] 
 
     def __init__(self, *args, **kwargs):
         super(EventSpider, self).__init__(*args, **kwargs)

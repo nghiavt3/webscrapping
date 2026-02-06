@@ -7,27 +7,39 @@ class EventSpider(scrapy.Spider):
     name = 'event_phr'
     mcpcty = 'PHR'
     allowed_domains = ['phr.vn'] 
-    start_urls = ['https://www.phr.vn/thong-tin-co-dong.aspx?catid=6'] 
+    start_urls = [
+        'https://www.phr.vn/thong-tin-co-dong.aspx?catid=6',
+                  'https://www.phr.vn/bao-cao-tai-chinh.aspx?catid=25',
+                  'https://www.phr.vn/nghi-quyet.aspx?catid=29'
+                  ] 
 
     def __init__(self, *args, **kwargs):
         super(EventSpider, self).__init__(*args, **kwargs)
         self.db_path = 'stock_events.db'
 
-    def start_requests(self):
+    async def start(self):
         for url in self.start_urls:
             yield scrapy.Request(
                 url=url,
                 callback=self.parse,
                 # Kích hoạt Playwright cho trang render JS
-                meta={'playwright': True}
+                meta={'playwright': True,
+                      "playwright_context": f"context_{url}", # Tạo context riêng cho mỗi link
+                      "playwright_page_methods": [
+                    # Chờ cho đến khi danh sách báo cáo tài chính xuất hiện
+                    #("wait_for_selector", "div.news-list"), 
+                    # Hoặc chờ một khoảng thời gian cố định
+                    "wait_for_timeout", 3000, 
+        ],
+                      }
             )
 
-    def parse(self, response):
+    async def parse(self, response):
         # 1. Kết nối SQLite
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
         table_name = f"{self.name}"
-        cursor.execute(f'''DROP TABLE IF EXISTS {table_name}''')
+        #cursor.execute(f'''DROP TABLE IF EXISTS {table_name}''')
         cursor.execute(f'''
             CREATE TABLE IF NOT EXISTS {table_name} (
                 id TEXT PRIMARY KEY, mcp TEXT, date TEXT, summary TEXT, 
@@ -77,7 +89,7 @@ class EventSpider(scrapy.Spider):
             e_item['web_source'] = self.allowed_domains[0]
             e_item['summary'] = summary
             e_item['date'] = iso_date
-            e_item['details_raw'] = f"{summary}\nView PDF: {full_view_url}\nDownload: {response.urljoin(download_url)}"
+            e_item['details_raw'] = f"{summary}\nView PDF: {full_view_url.replace('\\', '/').replace(' ', '%20')}\nDownload: {response.urljoin(download_url).replace('\\', '/').replace(' ', '%20')}"
             e_item['scraped_at'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
             
             yield e_item

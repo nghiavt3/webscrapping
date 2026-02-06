@@ -17,7 +17,7 @@ class EventSpider(scrapy.Spider):
         super(EventSpider, self).__init__(*args, **kwargs)
         self.db_path = 'stock_events.db'
 
-    def start_requests(self):
+    async def start(self):
         urls = [
             ('https://miaduongsonla.vn/thong-tin-co-dong1', self.parse_generic), 
             ('https://miaduongsonla.vn/bao-cao-tai-chinh', self.parse_generic), 
@@ -65,7 +65,7 @@ class EventSpider(scrapy.Spider):
         for article in articles: 
             title = article.css('.article-title a::text').get(default='').strip()
             date = article.css('.post-date::text').get()
-            link = article.css('.article-title a::attr(href)').get()
+            link = article.css('.article-title a::attr(href)').get().replace('\\', '/').replace(' ', '%20')
             if not title:
                 continue
 
